@@ -23,9 +23,9 @@ fn main() {
 fn map_request(request: Request<Body>) -> Response<Body> {
     match mapper::get_body(BASE_PATH, request) {
         Ok(response) => response,
-        Err(_) => {
-            let mut response = Response::new(Body::empty());
-            *response.status_mut() = StatusCode::NOT_FOUND;
+        Err(e) => {
+            let mut response = Response::new(Body::from(format!("{}", e)));
+            *response.status_mut() = StatusCode::INTERNAL_SERVER_ERROR;
             response
         }
     }
