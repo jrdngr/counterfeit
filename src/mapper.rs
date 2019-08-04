@@ -5,29 +5,63 @@ use std::path::{Path, PathBuf};
 use hyper::{Body, Request, Response, StatusCode, Method};
 use hyper::header::{self, HeaderValue};
 
-pub fn get_body(base_path: &str, req: Request<Body>) -> io::Result<Response<Body>> {
-    let mut response = Response::new(Body::empty());
-    
-    if let Some(path) = req.uri().path().split('?').nth(0) {
-        let full_path = PathBuf::from(format!("{}{}", base_path, path));
-        let file_path = choose_file(&full_path, req.method())?;
+use crate::MultiFileIndexMap;
 
-        let body_text = fs::read_to_string(&file_path)?;
-        *response.body_mut() = Body::from(body_text);
+pub struct FileMapper {
+    base_path: String,
+    multifile_indices: MultiFileIndexMap,
+}
 
-        if let Some(ext) = file_path.extension() {
-            if ext == "json" {
-                response.headers_mut().insert(header::CONTENT_TYPE, HeaderValue::from_static("application/json"));
-            }
+impl FileMapper {
+    pub fn new(base_path: &str, index_map: MultiFileIndexMap) -> Self {
+        Self {
+            base_path: base_path.to_string(),
+            multifile_indices: index_map,
         }
-
-        return Ok(response);
-
     }
 
-   *response.status_mut() = StatusCode::NOT_FOUND;
-    
-    Ok(response)
+    pub fn get_body(&self, req: Request<Body>) -> io::Result<Response<Body>> {
+        let mut response = Response::new(Body::empty());
+
+        if let Some(path) = req.uri().path().split('?').nth(0) {
+            let full_path = PathBuf::from(format!("{}{}", &self.base_path, path));
+            let file_path = choose_file(&full_path, req.method())?;
+
+            let body_text = fs::read_to_string(&file_path)?;
+            *response.body_mut() = Body::from(body_text);
+
+            if let Some(ext) = file_path.extension() {
+                if ext == "json" {
+                    response.headers_mut().insert(header::CONTENT_TYPE, HeaderValue::from_static("application/json"));
+                }
+            }
+
+            return Ok(response);
+        }
+
+        *response.status_mut() = StatusCode::NOT_FOUND;
+        
+        Ok(response)
+    }
+
+    pub fn map_request(&self, request: Request<Body>) -> Response<Body> {
+        match self.get_body(request) {
+            Ok(response) => response,
+            Err(e) => {
+                use std::io::ErrorKind;
+
+                let mut response = Response::new(Body::from(format!("{}", &e)));
+                
+                *response.status_mut() = match e.kind() {
+                    ErrorKind::NotFound => StatusCode::NOT_FOUND,
+                    _ => StatusCode::INTERNAL_SERVER_ERROR,
+                };
+
+                response
+            }
+        }
+    }
+
 }
 
 pub fn choose_file(path: &Path, method: &Method) ->io::Result<PathBuf> {

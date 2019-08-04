@@ -1,39 +1,36 @@
+use std::path::Path;
+use std::collections::HashMap;
+use std::fs;
+use std::io;
+use std::sync::{Arc, Mutex};
+
 use hyper::{Body, Request, Response, Server, StatusCode};
 use hyper::rt::Future;
-use hyper::service::service_fn_ok;
+use hyper::service::{make_service_fn, service_fn_ok};
 
 pub mod mapper;
 
-const BASE_PATH: &str = "./responses";
+pub use crate::mapper::FileMapper;
 
-fn main() {
+pub const BASE_PATH: &str = "./responses";
+
+pub type MultiFileIndexMap = Arc<Mutex<HashMap<String, usize>>>;
+
+fn main() -> io::Result<()> {
     let addr = ([127, 0, 0, 1], 3000).into();
 
-    let service = || {
-        service_fn_ok(map_request)
-    };
+    let index_map: MultiFileIndexMap = Arc::new(Mutex::new(HashMap::new()));
+
+    let make_service = make_service_fn(move |_| { 
+        let mapper = FileMapper::new(BASE_PATH, Arc::clone(&index_map));
+        service_fn_ok(move |request| mapper.map_request(request))
+    });
 
     let server = Server::bind(&addr)
-        .serve(service)
+        .serve(make_service)
         .map_err(|e| eprintln!("Server error: {}", e));
 
     hyper::rt::run(server);
-}
 
-fn map_request(request: Request<Body>) -> Response<Body> {
-    match mapper::get_body(BASE_PATH, request) {
-        Ok(response) => response,
-        Err(e) => {
-            use std::io::ErrorKind;
-
-            let mut response = Response::new(Body::from(format!("{}", &e)));
-            
-            *response.status_mut() = match e.kind() {
-                ErrorKind::NotFound => StatusCode::NOT_FOUND,
-                _ => StatusCode::INTERNAL_SERVER_ERROR,
-            };
-
-            response
-        }
-    }
+    Ok(())
 }
