@@ -7,13 +7,11 @@ use hyper::header::{self, HeaderValue};
 
 pub fn get_body(base_path: &str, req: Request<Body>) -> io::Result<Response<Body>> {
     let mut response = Response::new(Body::empty());
-
-    let path = PathBuf::from(format!("{}{}", base_path, req.uri().path()));
-    let file_path = choose_file(&path, req.method())?;
-
-    dbg!(&file_path);
     
     if let Some(path) = req.uri().path().split('?').nth(0) {
+        let full_path = PathBuf::from(format!("{}{}", base_path, path));
+        let file_path = choose_file(&full_path, req.method())?;
+
         let body_text = fs::read_to_string(&file_path)?;
         *response.body_mut() = Body::from(body_text);
 
