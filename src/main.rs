@@ -1,10 +1,8 @@
-use std::path::Path;
 use std::collections::HashMap;
-use std::fs;
 use std::io;
 use std::sync::{Arc, Mutex};
 
-use hyper::{Body, Request, Response, Server, StatusCode};
+use hyper::Server;
 use hyper::rt::Future;
 use hyper::service::{make_service_fn, service_fn_ok};
 

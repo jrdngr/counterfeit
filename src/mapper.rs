@@ -25,7 +25,7 @@ impl FileMapper {
 
         if let Some(path) = req.uri().path().split('?').nth(0) {
             let full_path = PathBuf::from(format!("{}{}", &self.base_path, path));
-            let file_path = choose_file(&full_path, req.method())?;
+            let file_path = self.choose_file(&full_path, req.method())?;
 
             let body_text = fs::read_to_string(&file_path)?;
             *response.body_mut() = Body::from(body_text);
@@ -62,17 +62,27 @@ impl FileMapper {
         }
     }
 
+    pub fn choose_file(&self, path: &Path, method: &Method) ->io::Result<PathBuf> {
+
+        let available_files = fs::read_dir(path)?
+            .filter_map(Result::ok)
+            .map(|file| file.path())
+            .filter(|path| path.is_file())
+            .filter(|path| file_matches(path, method))
+            .collect::<Vec<PathBuf>>();
+
+        match available_files.into_iter().nth(0) {
+            Some(file) => Ok(file),
+            None => Err(io::Error::new(io::ErrorKind::NotFound, "No files available")),
+        }
+    }
 }
 
-pub fn choose_file(path: &Path, method: &Method) ->io::Result<PathBuf> {
-    let available_files = fs::read_dir(path)?
-        .filter_map(Result::ok)
-        .map(|file| file.path())
-        .filter(|path| path.is_file())
-        .collect::<Vec<PathBuf>>();
+fn file_matches(file_path: &PathBuf, method: &Method) -> bool {
+    let method_str = method.as_str().to_lowercase();
 
-    match available_files.into_iter().nth(0) {
-        Some(file) => Ok(file),
-        None => Err(io::Error::new(io::ErrorKind::NotFound, "No files available")),
+    match file_path.file_stem().and_then(|stem| stem.to_str()) {
+        Some(stem) => stem == method_str || stem.to_lowercase().starts_with(&format!("{}_", method_str)),
+        None => false,
     }
 }
