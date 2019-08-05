@@ -2,9 +2,9 @@ use std::collections::HashMap;
 use std::io;
 use std::sync::{Arc, Mutex};
 
-use hyper::Server;
 use hyper::rt::Future;
 use hyper::service::{make_service_fn, service_fn_ok};
+use hyper::Server;
 
 pub mod mapper;
 
@@ -19,7 +19,7 @@ fn main() -> io::Result<()> {
 
     let index_map: MultiFileIndexMap = Arc::new(Mutex::new(HashMap::new()));
 
-    let make_service = make_service_fn(move |_| { 
+    let make_service = make_service_fn(move |_| {
         let mapper = FileMapper::new(BASE_PATH, Arc::clone(&index_map));
         service_fn_ok(move |request| mapper.map_request(request))
     });

@@ -2,8 +2,8 @@ use std::fs;
 use std::io;
 use std::path::{Path, PathBuf};
 
-use hyper::{Body, Request, Response, StatusCode, Method};
 use hyper::header::{self, HeaderValue};
+use hyper::{Body, Method, Request, Response, StatusCode};
 
 use crate::MultiFileIndexMap;
 
@@ -32,7 +32,10 @@ impl FileMapper {
 
             if let Some(ext) = file_path.extension() {
                 if ext == "json" {
-                    response.headers_mut().insert(header::CONTENT_TYPE, HeaderValue::from_static("application/json"));
+                    response.headers_mut().insert(
+                        header::CONTENT_TYPE,
+                        HeaderValue::from_static("application/json"),
+                    );
                 }
             }
 
@@ -40,7 +43,7 @@ impl FileMapper {
         }
 
         *response.status_mut() = StatusCode::NOT_FOUND;
-        
+
         Ok(response)
     }
 
@@ -51,7 +54,7 @@ impl FileMapper {
                 use std::io::ErrorKind;
 
                 let mut response = Response::new(Body::from(format!("{}", &e)));
-                
+
                 *response.status_mut() = match e.kind() {
                     ErrorKind::NotFound => StatusCode::NOT_FOUND,
                     _ => StatusCode::INTERNAL_SERVER_ERROR,
@@ -62,8 +65,7 @@ impl FileMapper {
         }
     }
 
-    pub fn choose_file(&self, path: &Path, method: &Method) ->io::Result<PathBuf> {
-
+    pub fn choose_file(&self, path: &Path, method: &Method) -> io::Result<PathBuf> {
         let available_files = fs::read_dir(path)?
             .filter_map(Result::ok)
             .map(|file| file.path())
@@ -73,7 +75,10 @@ impl FileMapper {
 
         match available_files.into_iter().nth(0) {
             Some(file) => Ok(file),
-            None => Err(io::Error::new(io::ErrorKind::NotFound, "No files available")),
+            None => Err(io::Error::new(
+                io::ErrorKind::NotFound,
+                "No files available",
+            )),
         }
     }
 }
@@ -82,7 +87,9 @@ fn file_matches(file_path: &PathBuf, method: &Method) -> bool {
     let method_str = method.as_str().to_lowercase();
 
     match file_path.file_stem().and_then(|stem| stem.to_str()) {
-        Some(stem) => stem == method_str || stem.to_lowercase().starts_with(&format!("{}_", method_str)),
+        Some(stem) => {
+            stem == method_str || stem.to_lowercase().starts_with(&format!("{}_", method_str))
+        }
         None => false,
     }
 }
