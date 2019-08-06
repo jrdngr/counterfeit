@@ -4,6 +4,7 @@ use std::path::{Path, PathBuf};
 
 use hyper::header::{self, HeaderValue};
 use hyper::{Body, Method, Request, Response, StatusCode};
+use walkdir::WalkDir;
 
 use crate::MultiFileIndexMap;
 
@@ -66,11 +67,13 @@ impl FileMapper {
     }
 
     pub fn choose_file(&self, path: &Path, method: &Method) -> io::Result<PathBuf> {
-        let available_files = fs::read_dir(path)?
+        let path = self.process_path(path);
+
+        let available_files = fs::read_dir(&path)?
             .filter_map(Result::ok)
-            .map(|file| file.path())
-            .filter(|path| path.is_file())
-            .filter(|path| file_matches(path, method))
+            .map(|entry| entry.path())
+            .filter(|p| p.is_file())
+            .filter(|p| file_matches(p, method))
             .collect::<Vec<PathBuf>>();
 
         if available_files.is_empty() {
@@ -80,7 +83,7 @@ impl FileMapper {
             ))
         } else {
             let mut indices = self.multifile_indices.lock().unwrap();
-            let index = indices.entry(PathBuf::from(path)).or_insert_with(|| 0);
+            let index = indices.entry(path).or_insert_with(|| 0);
             if *index >= available_files.len() {
                 *index = 0;
             }
@@ -94,6 +97,28 @@ impl FileMapper {
             }
         }
     }
+
+    fn process_path(&self, path: &Path) -> PathBuf {
+        // if path.exists() {
+        //     return PathBuf::from(path);
+        // }
+
+        let path_len = path.components().count();
+        dbg!(&path);
+        dbg!(path_len);
+
+        let all_paths: Vec<PathBuf> = list_dirs_recursive(&self.base_path)
+            .into_iter()
+            .filter(|path| path.components().count() == path_len)
+            .map(|path| {
+                dbg!(&path);
+                dbg!(path.components().count());
+                path
+            })
+            .collect();
+
+        PathBuf::from(path)    
+    }
 }
 
 fn file_matches(file_path: &PathBuf, method: &Method) -> bool {
@@ -105,4 +130,13 @@ fn file_matches(file_path: &PathBuf, method: &Method) -> bool {
         }
         None => false,
     }
+}
+
+fn list_dirs_recursive<P: AsRef<Path>>(path: P) -> Vec<PathBuf> {
+    WalkDir::new(path)
+        .into_iter()
+        .filter_map(Result::ok)
+        .map(|entry| PathBuf::from(entry.path()))
+        .filter(|path| path.is_dir())
+        .collect()
 }
