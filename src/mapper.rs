@@ -104,20 +104,13 @@ impl FileMapper {
         // }
 
         let path_len = path.components().count();
-        dbg!(&path);
-        dbg!(path_len);
 
-        let all_paths: Vec<PathBuf> = list_dirs_recursive(&self.base_path)
+        let _all_paths: Vec<PathBuf> = list_dirs_recursive(&self.base_path)
             .into_iter()
             .filter(|path| path.components().count() == path_len)
-            .map(|path| {
-                dbg!(&path);
-                dbg!(path.components().count());
-                path
-            })
             .collect();
 
-        PathBuf::from(path)    
+        PathBuf::from(path)
     }
 }
 
