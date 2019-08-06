@@ -49,6 +49,8 @@ fn main() -> io::Result<()> {
         .serve(make_service)
         .map_err(|e| eprintln!("Server error: {}", e));
 
+    println!("Serving files at {:?}", &addr);
+
     hyper::rt::run(server);
 
     Ok(())
