@@ -20,6 +20,24 @@ impl FileMapper {
         }
     }
 
+    pub fn map_request(&self, request: Request<Body>) -> Response<Body> {
+        match self.get_body(request) {
+            Ok(response) => response,
+            Err(e) => {
+                use std::io::ErrorKind;
+
+                let mut response = Response::new(Body::from(format!("{}", &e)));
+
+                *response.status_mut() = match e.kind() {
+                    ErrorKind::NotFound => StatusCode::NOT_FOUND,
+                    _ => StatusCode::INTERNAL_SERVER_ERROR,
+                };
+
+                response
+            }
+        }
+    }
+
     pub fn get_body(&self, req: Request<Body>) -> io::Result<Response<Body>> {
         let mut response = Response::new(Body::empty());
 
@@ -47,24 +65,6 @@ impl FileMapper {
         Ok(response)
     }
 
-    pub fn map_request(&self, request: Request<Body>) -> Response<Body> {
-        match self.get_body(request) {
-            Ok(response) => response,
-            Err(e) => {
-                use std::io::ErrorKind;
-
-                let mut response = Response::new(Body::from(format!("{}", &e)));
-
-                *response.status_mut() = match e.kind() {
-                    ErrorKind::NotFound => StatusCode::NOT_FOUND,
-                    _ => StatusCode::INTERNAL_SERVER_ERROR,
-                };
-
-                response
-            }
-        }
-    }
-
     pub fn choose_file(&self, path: &Path, method: &Method) -> io::Result<PathBuf> {
         let available_files = fs::read_dir(path)?
             .filter_map(Result::ok)
@@ -73,12 +73,25 @@ impl FileMapper {
             .filter(|path| file_matches(path, method))
             .collect::<Vec<PathBuf>>();
 
-        match available_files.into_iter().nth(0) {
-            Some(file) => Ok(file),
-            None => Err(io::Error::new(
+        if available_files.is_empty() {
+            Err(io::Error::new(
                 io::ErrorKind::NotFound,
                 "No files available",
-            )),
+            ))
+        } else {
+            let mut indices = self.multifile_indices.lock().unwrap();
+            let index = indices.entry(PathBuf::from(path)).or_insert_with(|| 0);
+            if *index >= available_files.len() {
+                *index = 0;
+            }
+
+            match available_files.into_iter().nth(*index) {
+                Some(file) => {
+                    *index += 1;
+                    Ok(file)
+                }
+                None => Err(io::Error::new(io::ErrorKind::Other, "Could not read file")),
+            }
         }
     }
 }

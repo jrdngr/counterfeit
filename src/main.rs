@@ -1,5 +1,6 @@
 use std::collections::HashMap;
 use std::io;
+use std::path::PathBuf;
 use std::sync::{Arc, Mutex};
 
 use hyper::rt::Future;
@@ -12,7 +13,7 @@ pub use crate::mapper::FileMapper;
 
 pub const BASE_PATH: &str = "./responses";
 
-pub type MultiFileIndexMap = Arc<Mutex<HashMap<String, usize>>>;
+pub type MultiFileIndexMap = Arc<Mutex<HashMap<PathBuf, usize>>>;
 
 fn main() -> io::Result<()> {
     let addr = ([127, 0, 0, 1], 3000).into();
