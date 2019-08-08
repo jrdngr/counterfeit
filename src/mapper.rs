@@ -1,6 +1,6 @@
 use std::fs;
 use std::io;
-use std::path::{Path, PathBuf};
+use std::path::{Path, PathBuf, Component};
 
 use hyper::header::{self, HeaderValue};
 use hyper::{Body, Method, Request, Response, StatusCode};
@@ -99,18 +99,64 @@ impl FileMapper {
     }
 
     fn process_path(&self, path: &Path) -> PathBuf {
-        // if path.exists() {
-        //     return PathBuf::from(path);
-        // }
+        if path.exists() {
+            return PathBuf::from(path);
+        }
 
-        let path_len = path.components().count();
+        let all_paths = list_dirs_recursive(&self.base_path);
 
-        let _all_paths: Vec<PathBuf> = list_dirs_recursive(&self.base_path)
-            .into_iter()
-            .filter(|path| path.components().count() == path_len)
-            .collect();
+        let matching_path = all_paths
+            .iter()
+            .filter_map(|potential_path| PathMatch::get_match(&path, &potential_path))
+            .max_by(|p1, p2| p1.num_exact_matches.cmp(&p2.num_exact_matches));
 
-        PathBuf::from(path)
+        match matching_path {
+            Some(p) => PathBuf::from(p),
+            None => PathBuf::from(path), 
+        }
+    }
+}
+
+struct PathMatch {
+    path: PathBuf,
+    num_exact_matches: usize,
+}
+
+impl From<PathMatch> for PathBuf {
+    fn from(path_match: PathMatch) -> PathBuf {
+        path_match.path
+    }
+}
+
+impl PathMatch {
+    pub fn get_match(target: &Path, potential: &Path) -> Option<Self> {
+        let (exact_count, param_count) = target.components()
+            .zip(potential.components())
+            .filter(|(tc, pc)| tc == pc || is_param(pc))
+            .fold((0, 0), |(exact_acc, param_acc), (tc, pc)| {
+                if tc == pc {
+                    (exact_acc + 1, param_acc)
+                } else {
+                    (exact_acc, param_acc + 1)
+                }
+            });
+
+        if exact_count + param_count == target.components().count() {
+            let result = PathMatch {
+                path: PathBuf::from(potential),
+                num_exact_matches: exact_count,
+            };
+            Some(result)
+        } else {
+            None
+        }
+    }
+}
+
+fn is_param(component: &Component) -> bool {
+    match component.as_os_str().to_str() {
+        Some(s) => s.starts_with('_') && s.ends_with('_'),
+        None => false, 
     }
 }
 
