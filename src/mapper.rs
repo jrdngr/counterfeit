@@ -130,14 +130,19 @@ impl From<PathMatch> for PathBuf {
 
 impl PathMatch {
     pub fn get_match(target: &Path, potential: &Path) -> Option<Self> {
+        if target.components().count() != potential.components().count() {
+            return None;
+        }
+
         let (exact_count, param_count) = target.components()
             .zip(potential.components())
-            .filter(|(tc, pc)| tc == pc || is_param(pc))
             .fold((0, 0), |(exact_acc, param_acc), (tc, pc)| {
                 if tc == pc {
                     (exact_acc + 1, param_acc)
-                } else {
+                } else if is_param(&pc) {
                     (exact_acc, param_acc + 1)
+                } else {
+                    (exact_acc, param_acc)
                 }
             });
 
