@@ -7,16 +7,17 @@ use hyper::{Body, Method, Request, Response, StatusCode};
 use walkdir::WalkDir;
 
 use crate::MultiFileIndexMap;
+use crate::config::CounterfeitRunConfig;
 
 pub struct FileMapper {
-    base_path: String,
+    config: CounterfeitRunConfig,
     multifile_indices: MultiFileIndexMap,
 }
 
 impl FileMapper {
-    pub fn new(base_path: &str, index_map: MultiFileIndexMap) -> Self {
+    pub fn new(config: CounterfeitRunConfig, index_map: MultiFileIndexMap) -> Self {
         Self {
-            base_path: base_path.to_string(),
+            config,
             multifile_indices: index_map,
         }
     }
@@ -43,7 +44,7 @@ impl FileMapper {
         let mut response = Response::new(Body::empty());
 
         if let Some(path) = req.uri().path().split('?').nth(0) {
-            let full_path = PathBuf::from(format!("{}{}", &self.base_path, path));
+            let full_path = PathBuf::from(format!("{}{}", &self.config.base_path, path));
             let file_path = self.choose_file(&full_path, req.method())?;
 
             let body_text = fs::read_to_string(&file_path)?;
@@ -103,7 +104,7 @@ impl FileMapper {
             return PathBuf::from(path);
         }
 
-        let all_paths = list_dirs_recursive(&self.base_path);
+        let all_paths = list_dirs_recursive(&self.config.base_path);
 
         let matching_path = all_paths
             .iter()

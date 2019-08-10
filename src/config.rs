@@ -2,7 +2,9 @@ use std::net::SocketAddr;
 
 use crate::options::CounterfeitRunOptions;
 
+#[derive(Debug, Clone)]
 pub struct CounterfeitRunConfig {
+    pub base_path: String,
     pub lenient: bool,
     pub write: bool,
     pub socket: SocketAddr,
@@ -13,6 +15,7 @@ pub struct CounterfeitRunConfig {
 impl From<CounterfeitRunOptions> for CounterfeitRunConfig {
     fn from(options: CounterfeitRunOptions) -> Self {
         let CounterfeitRunOptions {
+            base_path,
             lenient,
             write,
             mut socket,
@@ -43,6 +46,7 @@ impl From<CounterfeitRunOptions> for CounterfeitRunConfig {
         }
 
         Self {
+            base_path,
             lenient,
             write,
             socket,

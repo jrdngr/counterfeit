@@ -18,8 +18,6 @@ pub use crate::config::CounterfeitRunConfig;
 
 use crate::options::CounterfeitOptions;
 
-pub const BASE_PATH: &str = "./responses";
-
 pub type MultiFileIndexMap = Arc<Mutex<HashMap<PathBuf, usize>>>;
 
 fn main() -> io::Result<()> {
@@ -32,8 +30,10 @@ fn main() -> io::Result<()> {
 fn run(config: CounterfeitRunConfig) -> io::Result<()> {
     let index_map: MultiFileIndexMap = Arc::new(Mutex::new(HashMap::new()));
 
+    let socket = config.socket;
+
     let make_service = make_service_fn(move |_| {
-        let mapper = FileMapper::new(BASE_PATH, Arc::clone(&index_map));
+        let mapper = FileMapper::new(config.clone(), Arc::clone(&index_map));
         service_fn_ok(move |request| {
             let mut response = if request.method() == Method::OPTIONS {
                 Response::new(Body::empty())
@@ -56,11 +56,11 @@ fn run(config: CounterfeitRunConfig) -> io::Result<()> {
         })
     });
 
-    let server = Server::bind(&config.socket)
+    let server = Server::bind(&socket)
         .serve(make_service)
         .map_err(|e| eprintln!("Server error: {}", e));
 
-    println!("Serving files at {:?}", &config.socket);
+    println!("Serving files at {:?}", &socket);
 
     hyper::rt::run(server);
 

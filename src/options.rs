@@ -24,6 +24,10 @@ pub enum CounterfeitOptions {
 
 #[derive(StructOpt, Debug)]
 pub struct CounterfeitRunOptions {
+    /// Sets the base directory to serve responses from
+    #[structopt(short = "b", long, default_value = "./responses")]
+    pub base_path: String,
+
     /// Unimplemented --
     /// Paths will match if they have the same number of components. 
     /// The response will be the path with the greatest number of matching components.
@@ -70,6 +74,10 @@ pub struct CounterfeitRunOptions {
 pub struct CounterfeitSaveOptions {
     pub response: String,
     
+    /// Sets the base directory to store responses to
+    #[structopt(short = "b", long, default_value = "./responses")]
+    pub base_path: String,
+
     /// If a file already exists in the target directory, it will be overwritten
     #[structopt(short = "o", long)]
     pub overwrite: bool,
