@@ -1,5 +1,6 @@
 use std::net::SocketAddr;
 
+use hyper::Method;
 use structopt::StructOpt;
 
 /// Counterfeit is a tool for simulating a REST API. 
@@ -16,9 +17,13 @@ pub struct CounterfeitOptions {
     pub lenient: bool,
 
     /// Unimplemented --
-    /// Write POST requests to their request path overwriting post files that are already there
-    #[structopt(short = "w", long = "write-post")]
-    pub write_post: bool,
+    /// Writes requests to disk depending on the HTTP method.
+    /// POST will add a new GET file and renumber all GET files.
+    /// PUT will add a new GET file and delete any existing GET files.
+    /// DELETE will delete all matching GET files.
+    /// PATCH will dif all matching GET files.
+    #[structopt(short = "w", long)]
+    pub write: bool,
 
     /// Unimplemented --
     /// If a post.json exists, use it as a base and apply POST request as a diff.
@@ -36,7 +41,7 @@ pub struct CounterfeitOptions {
 
     /// Unimplemented --
     /// Sets the directory name template for Path parameters
-    /// Use double brackets around the parameter.
+    /// Use double brackets for the parameter.
     /// Example: "_{{}}_" -> ../_someIdentifier_/..
     #[structopt(short = "t", long = "template")]
     pub param_template: Option<String>,
