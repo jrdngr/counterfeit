@@ -1,6 +1,5 @@
 use std::net::SocketAddr;
 
-use hyper::Method;
 use structopt::StructOpt;
 
 /// Counterfeit is a tool for simulating a REST API. 
@@ -25,12 +24,6 @@ pub struct CounterfeitOptions {
     #[structopt(short = "w", long)]
     pub write: bool,
 
-    /// Unimplemented --
-    /// If a post.json exists, use it as a base and apply POST request as a diff.
-    /// If no post.json exists, write the response to post.json.
-    #[structopt(short = "d", long = "diff-post")]
-    pub diff_post: bool,
-
     /// Sets the port of the local server
     #[structopt(short = "p", long)]
     pub port: Option<u16>,
@@ -39,12 +32,23 @@ pub struct CounterfeitOptions {
     #[structopt(short = "s", long, default_value = "127.0.0.1:3000")]
     pub socket: SocketAddr,
 
-    /// Unimplemented --
-    /// Sets the directory name template for Path parameters
-    /// Use double brackets for the parameter.
-    /// Example: "_{{}}_" -> ../_someIdentifier_/..
-    #[structopt(short = "t", long = "template")]
-    pub param_template: Option<String>,
+    /// Sets the directory prefix for path parameters.
+    /// Example: "_" -> ../_anyIdentifier/..
+    #[structopt(long = "prefix")]
+    pub param_prefix: Option<String>,
+
+    /// Sets the directory postfix for path parameters.
+    /// Example: "_" -> ../anyIdentifier_/..
+    #[structopt(long = "postfix")]
+    pub param_postfix: Option<String>,
+
+    /// Sets the directory prefix and postfix for path parameters.
+    /// Example: "_" -> ../_anyIdentifier_/..
+    /// 
+    /// If used with --prefix or --postfix, the given symbol will surround the other prefix/postfix
+    /// Example: "--prefix { --postfix } --surround _" -> ../_{anyIdentifier}_/..
+    #[structopt(long = "surround")]
+    pub params_surround: Option<String>,
 
     #[structopt(subcommand)]
     pub subcommand: Option<CounterfeitSubcommand>,
