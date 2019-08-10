@@ -21,9 +21,11 @@ pub const BASE_PATH: &str = "./responses";
 pub type MultiFileIndexMap = Arc<Mutex<HashMap<PathBuf, usize>>>;
 
 fn main() -> io::Result<()> {
-    let _options = CounterfeitOptions::from_args();
+    let mut options = CounterfeitOptions::from_args();
 
-    let addr = ([127, 0, 0, 1], 3000).into();
+    if let Some(port) = options.port {
+        options.socket.set_port(port);
+    }
 
     let index_map: MultiFileIndexMap = Arc::new(Mutex::new(HashMap::new()));
 
@@ -51,11 +53,11 @@ fn main() -> io::Result<()> {
         })
     });
 
-    let server = Server::bind(&addr)
+    let server = Server::bind(&options.socket)
         .serve(make_service)
         .map_err(|e| eprintln!("Server error: {}", e));
 
-    println!("Serving files at {:?}", &addr);
+    println!("Serving files at {:?}", &options.socket);
 
     hyper::rt::run(server);
 
