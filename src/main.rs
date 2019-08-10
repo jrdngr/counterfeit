@@ -11,9 +11,9 @@ use structopt::StructOpt;
 
 pub mod config;
 pub mod options;
-pub mod mapper;
+pub mod old_mapper;
 
-pub use crate::mapper::FileMapper;
+pub use crate::old_mapper::FileMapper;
 pub use crate::config::CounterfeitRunConfig;
 
 use crate::options::CounterfeitOptions;
