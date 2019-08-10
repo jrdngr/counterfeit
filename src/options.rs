@@ -43,6 +43,12 @@ pub struct CounterfeitRunOptions {
     #[structopt(short = "w", long)]
     pub write: bool,
 
+    /// Unimplemented --
+    /// If a request is received that has no matching response, an empty
+    /// file will be created with the name of the method and a .json extension
+    #[structopt(short, long = "create")]
+    pub create_missing: bool,
+
     /// Sets the port of the local server
     #[structopt(short = "p", long)]
     pub port: Option<u16>,
