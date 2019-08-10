@@ -2,9 +2,9 @@ use std::net::SocketAddr;
 
 use structopt::StructOpt;
 
-/// Counterfeit is a tool for simulating a REST API. 
-/// API endpoints map directly to your file system and request bodies are built based on a few simple rules. 
-/// It's particularly useful for returning JSON responses as they can be edited in your favorite text editor 
+/// Counterfeit is a tool for simulating a REST API.
+/// API endpoints map directly to your file system and request bodies are built based on a few simple rules.
+/// It's particularly useful for returning JSON responses as they can be edited in your favorite text editor
 /// any time you need the data to change. The next time you call the endpoint, you'll get the updated data.
 #[derive(StructOpt, Debug)]
 #[structopt(name = "options")]
@@ -29,7 +29,7 @@ pub struct CounterfeitRunOptions {
     pub base_path: String,
 
     /// Unimplemented --
-    /// Paths will match if they have the same number of components. 
+    /// Paths will match if they have the same number of components.
     /// The response will be the path with the greatest number of matching components.
     #[structopt(short = "l", long)]
     pub lenient: bool,
@@ -69,14 +69,17 @@ pub struct CounterfeitRunOptions {
 
     /// Sets the directory prefix and postfix for path parameters.
     /// Example: "_" -> ../_anyIdentifier_/..
-    #[structopt(long = "surround", raw(conflicts_with_all = "&[\"param_prefix\", \"param_postfix\"]"))]
+    #[structopt(
+        long = "surround",
+        raw(conflicts_with_all = "&[\"param_prefix\", \"param_postfix\"]")
+    )]
     pub param_surround: Option<String>,
 }
 
 #[derive(StructOpt, Debug)]
 pub struct CounterfeitSaveOptions {
     pub response: String,
-    
+
     /// Sets the base directory to store responses to
     #[structopt(short = "b", long, default_value = "./responses")]
     pub base_path: String,

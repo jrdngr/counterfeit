@@ -1,13 +1,13 @@
 use std::fs;
 use std::io;
-use std::path::{Path, PathBuf, Component};
+use std::path::{Component, Path, PathBuf};
 
 use hyper::header::{self, HeaderValue};
 use hyper::{Body, Method, Request, Response, StatusCode};
 use walkdir::WalkDir;
 
-use crate::MultiFileIndexMap;
 use crate::config::CounterfeitRunConfig;
+use crate::MultiFileIndexMap;
 
 pub struct FileMapper {
     config: CounterfeitRunConfig,
@@ -113,7 +113,7 @@ impl FileMapper {
 
         match matching_path {
             Some(p) => PathBuf::from(p),
-            None => PathBuf::from(path), 
+            None => PathBuf::from(path),
         }
     }
 }
@@ -130,14 +130,18 @@ impl From<PathMatch> for PathBuf {
 }
 
 impl PathMatch {
-    pub fn get_match(target: &Path, potential: &Path, config: &CounterfeitRunConfig) -> Option<Self> {
+    pub fn get_match(
+        target: &Path,
+        potential: &Path,
+        config: &CounterfeitRunConfig,
+    ) -> Option<Self> {
         if target.components().count() != potential.components().count() {
             return None;
         }
 
-        let (exact_count, param_count) = target.components()
-            .zip(potential.components())
-            .fold((0, 0), |(exact_acc, param_acc), (tc, pc)| {
+        let (exact_count, param_count) = target.components().zip(potential.components()).fold(
+            (0, 0),
+            |(exact_acc, param_acc), (tc, pc)| {
                 if tc == pc {
                     (exact_acc + 1, param_acc)
                 } else if is_param(&pc, config) {
@@ -145,7 +149,8 @@ impl PathMatch {
                 } else {
                     (exact_acc, param_acc)
                 }
-            });
+            },
+        );
 
         if exact_count + param_count == target.components().count() {
             let result = PathMatch {
@@ -162,7 +167,7 @@ impl PathMatch {
 fn is_param(component: &Component, config: &CounterfeitRunConfig) -> bool {
     match component.as_os_str().to_str() {
         Some(s) => s.starts_with(&config.prefix) && s.ends_with(&config.postfix),
-        None => false, 
+        None => false,
     }
 }
 

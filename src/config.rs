@@ -31,12 +31,12 @@ impl From<CounterfeitRunOptions> for CounterfeitRunConfig {
             socket.set_port(port);
         }
 
-        let (prefix, postfix) = if let Some(surround) = param_surround { 
+        let (prefix, postfix) = if let Some(surround) = param_surround {
             (surround.clone(), surround.clone())
-        } else { 
+        } else {
             (param_prefix, param_postfix)
         };
-        
+
         Self {
             base_path,
             lenient,
