@@ -8,7 +8,22 @@ use structopt::StructOpt;
 /// any time you need the data to change. The next time you call the endpoint, you'll get the updated data.
 #[derive(StructOpt, Debug)]
 #[structopt(name = "options")]
-pub struct CounterfeitOptions {
+pub enum CounterfeitOptions {
+    /// Runs the counterfeit server
+    #[structopt(name = "run")]
+    Run(CounterfeitRunOptions),
+
+    /// Unimplemented --
+    /// Pipe in an HTTP response to save the body to the path given in the original request
+    /// The file name will be based on the HTTP method of the request.
+    /// If there's already a file for that method in the directory, all matching files would be numbered.
+    /// You're free to rename all of those files
+    #[structopt(name = "save")]
+    Save(CounterfeitSaveOptions),
+}
+
+#[derive(StructOpt, Debug)]
+pub struct CounterfeitRunOptions {
     /// Unimplemented --
     /// Paths will match if they have the same number of components. 
     /// The response will be the path with the greatest number of matching components.
@@ -48,25 +63,14 @@ pub struct CounterfeitOptions {
     /// If used with --prefix or --postfix, the given symbol will surround the other prefix/postfix
     /// Example: "--prefix { --postfix } --surround _" -> ../_{anyIdentifier}_/..
     #[structopt(long = "surround")]
-    pub params_surround: Option<String>,
-
-    #[structopt(subcommand)]
-    pub subcommand: Option<CounterfeitSubcommand>,
+    pub param_surround: Option<String>,
 }
 
 #[derive(StructOpt, Debug)]
-pub enum CounterfeitSubcommand {
-    /// Unimplemented --
-    /// Pipe in an HTTP response to save the body to the path given in the original request
-    /// The file name will be based on the HTTP method of the request.
-    /// If there's already a file for that method in the directory, all matching files would be numbered.
-    /// You're free to rename all of those files
-    #[structopt(name = "save")]
-    Save {
-        response: String,
-        
-        /// If a file already exists in the target directory, it will be overwritten
-        #[structopt(short = "o", long)]
-        overwrite: bool,
-    },
+pub struct CounterfeitSaveOptions {
+    pub response: String,
+    
+    /// If a file already exists in the target directory, it will be overwritten
+    #[structopt(short = "o", long)]
+    pub overwrite: bool,
 }

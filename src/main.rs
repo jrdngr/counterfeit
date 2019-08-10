@@ -9,25 +9,27 @@ use hyper::service::{make_service_fn, service_fn_ok};
 use hyper::{Body, Method, Response, Server};
 use structopt::StructOpt;
 
-use crate::options::CounterfeitOptions;
-
+pub mod config;
 pub mod options;
 pub mod mapper;
 
 pub use crate::mapper::FileMapper;
+pub use crate::config::CounterfeitRunConfig;
+
+use crate::options::CounterfeitOptions;
 
 pub const BASE_PATH: &str = "./responses";
 
 pub type MultiFileIndexMap = Arc<Mutex<HashMap<PathBuf, usize>>>;
 
 fn main() -> io::Result<()> {
-    let mut options = CounterfeitOptions::from_args();
-    dbg!(&options);
-
-    if let Some(port) = options.port {
-        options.socket.set_port(port);
+    match CounterfeitOptions::from_args() {
+        CounterfeitOptions::Run(run_options) => run(run_options.into()),
+        CounterfeitOptions::Save(_save_options) => unimplemented!(),
     }
+}
 
+fn run(config: CounterfeitRunConfig) -> io::Result<()> {
     let index_map: MultiFileIndexMap = Arc::new(Mutex::new(HashMap::new()));
 
     let make_service = make_service_fn(move |_| {
@@ -54,11 +56,11 @@ fn main() -> io::Result<()> {
         })
     });
 
-    let server = Server::bind(&options.socket)
+    let server = Server::bind(&config.socket)
         .serve(make_service)
         .map_err(|e| eprintln!("Server error: {}", e));
 
-    println!("Serving files at {:?}", &options.socket);
+    println!("Serving files at {:?}", &config.socket);
 
     hyper::rt::run(server);
 
