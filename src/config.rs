@@ -29,22 +29,12 @@ impl From<CounterfeitRunOptions> for CounterfeitRunConfig {
             socket.set_port(port);
         }
 
-        let mut prefix = String::new();
-        if let Some(surround) = &param_surround {
-            prefix.push_str(surround);
-        }
-        if let Some(pre) = &param_prefix {
-            prefix.push_str(pre);
-        }
-
-        let mut postfix = String::new();
-        if let Some(post) = &param_postfix {
-            postfix.push_str(post);
-        }
-        if let Some(surround) = &param_surround {
-            postfix.push_str(surround);
-        }
-
+        let (prefix, postfix) = if let Some(surround) = param_surround { 
+            (surround.clone(), surround.clone())
+        } else { 
+            (param_prefix, param_postfix)
+        };
+        
         Self {
             base_path,
             lenient,

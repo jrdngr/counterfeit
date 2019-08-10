@@ -53,20 +53,17 @@ pub struct CounterfeitRunOptions {
 
     /// Sets the directory prefix for path parameters.
     /// Example: "_" -> ../_anyIdentifier/..
-    #[structopt(long = "prefix")]
-    pub param_prefix: Option<String>,
+    #[structopt(long = "prefix", default_value = "_")]
+    pub param_prefix: String,
 
     /// Sets the directory postfix for path parameters.
     /// Example: "_" -> ../anyIdentifier_/..
-    #[structopt(long = "postfix")]
-    pub param_postfix: Option<String>,
+    #[structopt(long = "postfix", default_value = "_")]
+    pub param_postfix: String,
 
     /// Sets the directory prefix and postfix for path parameters.
     /// Example: "_" -> ../_anyIdentifier_/..
-    /// 
-    /// If used with --prefix or --postfix, the given symbol will surround the other prefix/postfix
-    /// Example: "--prefix { --postfix } --surround _" -> ../_{anyIdentifier}_/..
-    #[structopt(long = "surround")]
+    #[structopt(long = "surround", raw(conflicts_with_all = "&[\"param_prefix\", \"param_postfix\"]"))]
     pub param_surround: Option<String>,
 }
 

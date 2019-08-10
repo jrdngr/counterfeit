@@ -108,7 +108,7 @@ impl FileMapper {
 
         let matching_path = all_paths
             .iter()
-            .filter_map(|potential_path| PathMatch::get_match(&path, &potential_path))
+            .filter_map(|potential_path| PathMatch::get_match(&path, &potential_path, &self.config))
             .max_by(|p1, p2| p1.num_exact_matches.cmp(&p2.num_exact_matches));
 
         match matching_path {
@@ -130,7 +130,7 @@ impl From<PathMatch> for PathBuf {
 }
 
 impl PathMatch {
-    pub fn get_match(target: &Path, potential: &Path) -> Option<Self> {
+    pub fn get_match(target: &Path, potential: &Path, config: &CounterfeitRunConfig) -> Option<Self> {
         if target.components().count() != potential.components().count() {
             return None;
         }
@@ -140,7 +140,7 @@ impl PathMatch {
             .fold((0, 0), |(exact_acc, param_acc), (tc, pc)| {
                 if tc == pc {
                     (exact_acc + 1, param_acc)
-                } else if is_param(&pc) {
+                } else if is_param(&pc, config) {
                     (exact_acc, param_acc + 1)
                 } else {
                     (exact_acc, param_acc)
@@ -159,9 +159,9 @@ impl PathMatch {
     }
 }
 
-fn is_param(component: &Component) -> bool {
+fn is_param(component: &Component, config: &CounterfeitRunConfig) -> bool {
     match component.as_os_str().to_str() {
-        Some(s) => s.starts_with('_') && s.ends_with('_'),
+        Some(s) => s.starts_with(&config.prefix) && s.ends_with(&config.postfix),
         None => false, 
     }
 }
