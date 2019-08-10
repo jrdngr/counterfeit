@@ -17,13 +17,13 @@ pub struct CounterfeitOptions {
 
     /// Unimplemented --
     /// Write POST requests to their request path overwriting post files that are already there
-    #[structopt(short = "w", long)]
+    #[structopt(short = "w", long = "write-post")]
     pub write_post: bool,
 
     /// Unimplemented --
     /// If a post.json exists, use it as a base and apply POST request as a diff.
     /// If no post.json exists, write the response to post.json.
-    #[structopt(short = "d", long)]
+    #[structopt(short = "d", long = "diff-post")]
     pub diff_post: bool,
 
     /// Sets the port of the local server
@@ -38,7 +38,7 @@ pub struct CounterfeitOptions {
     /// Sets the directory name template for Path parameters
     /// Use double brackets around the parameter.
     /// Example: "_{{}}_" -> ../_someIdentifier_/..
-    #[structopt(short = "t", long)]
+    #[structopt(short = "t", long = "template")]
     pub param_template: Option<String>,
 
     #[structopt(subcommand)]
@@ -60,4 +60,4 @@ pub enum CounterfeitSubcommand {
         #[structopt(short = "o", long)]
         overwrite: bool,
     },
-} 
+}

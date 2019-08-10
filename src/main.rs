@@ -22,6 +22,7 @@ pub type MultiFileIndexMap = Arc<Mutex<HashMap<PathBuf, usize>>>;
 
 fn main() -> io::Result<()> {
     let mut options = CounterfeitOptions::from_args();
+    dbg!(&options);
 
     if let Some(port) = options.port {
         options.socket.set_port(port);
