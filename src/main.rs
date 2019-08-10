@@ -7,7 +7,11 @@ use hyper::header::{self, HeaderValue};
 use hyper::rt::Future;
 use hyper::service::{make_service_fn, service_fn_ok};
 use hyper::{Body, Method, Response, Server};
+use structopt::StructOpt;
 
+use crate::options::CounterfeitOptions;
+
+pub mod options;
 pub mod mapper;
 
 pub use crate::mapper::FileMapper;
@@ -17,6 +21,8 @@ pub const BASE_PATH: &str = "./responses";
 pub type MultiFileIndexMap = Arc<Mutex<HashMap<PathBuf, usize>>>;
 
 fn main() -> io::Result<()> {
+    let _options = CounterfeitOptions::from_args();
+
     let addr = ([127, 0, 0, 1], 3000).into();
 
     let index_map: MultiFileIndexMap = Arc::new(Mutex::new(HashMap::new()));

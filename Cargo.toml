@@ -6,4 +6,5 @@ edition = "2018"
 
 [dependencies]
 hyper = "0.12"
+structopt = "0.2.18"
 walkdir = "2.2.9"
