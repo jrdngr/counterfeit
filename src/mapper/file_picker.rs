@@ -14,6 +14,14 @@ pub struct StandardFilePicker {
     multifile_indices: MultiFileIndexMap,
 }
 
+impl StandardFilePicker {
+    pub fn new(index_map: MultiFileIndexMap) -> Self {
+        Self {
+            multifile_indices: index_map,
+        }
+    }
+}
+
 impl FilePicker for StandardFilePicker {
     fn pick_file(&mut self, directory: &Path, request: &Request<Body>) -> io::Result<PathBuf> {
         let available_files = fs::read_dir(&directory)?
