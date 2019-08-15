@@ -49,12 +49,16 @@ pub struct CounterfeitRunOptions {
     #[structopt(short, long = "create")]
     pub create_missing: bool,
 
+    /// Silences printing request and response info to the console
+    #[structopt(short = "s", long)]
+    pub silent: bool,
+
     /// Sets the port of the local server
     #[structopt(short = "p", long)]
     pub port: Option<u16>,
 
     /// Sets the socket address of the local server
-    #[structopt(short = "s", long, default_value = "127.0.0.1:3000")]
+    #[structopt(short = "a", long, default_value = "127.0.0.1:3000")]
     pub socket: SocketAddr,
 
     /// Sets the directory prefix for path parameters.

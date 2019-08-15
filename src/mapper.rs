@@ -30,6 +30,7 @@ where
     file_picker: F,
     mutation_handler: M,
     response_hook: R,
+    config: CounterfeitRunConfig,
 }
 
 impl<D, F, M, R> FileMapper<D, F, M, R>
@@ -39,12 +40,19 @@ where
     M: MutationHandler,
     R: ResponseHook,
 {
-    pub fn new(dir_picker: D, file_picker: F, mutation_handler: M, response_hook: R) -> Self {
+    pub fn new(
+        dir_picker: D,
+        file_picker: F,
+        mutation_handler: M,
+        response_hook: R,
+        config: CounterfeitRunConfig,
+    ) -> Self {
         Self {
             dir_picker,
             file_picker,
             mutation_handler,
             response_hook,
+            config,
         }
     }
 }
@@ -52,10 +60,11 @@ where
 impl FileMapper<StandardDirPicker, StandardFilePicker, ImmutableHandler, IdentityResponseHook> {
     pub fn standard(config: CounterfeitRunConfig, index_map: MultiFileIndexMap) -> Self {
         Self {
-            dir_picker: StandardDirPicker::new(config),
+            dir_picker: StandardDirPicker::new(config.clone()),
             file_picker: StandardFilePicker::new(index_map),
             mutation_handler: ImmutableHandler,
             response_hook: IdentityResponseHook,
+            config,
         }
     }
 }
@@ -68,6 +77,10 @@ where
     R: ResponseHook,
 {
     fn map_request(&mut self, request: Request<Body>) -> io::Result<Response<Body>> {
+        if !self.config.silent {
+            println!("Request: {} -> {}", request.method(), request.uri().path());
+        }
+
         let directory = self.dir_picker.pick_directory(&request)?;
         let file = self.file_picker.pick_file(&directory, &request);
         self.mutation_handler.apply_mutation(&request)?;
@@ -77,16 +90,18 @@ where
         match file {
             Ok(path) => {
                 *response.body_mut() = Body::from(fs::read_to_string(&path)?);
+                if !self.config.silent {
+                    println!("Response: 200 -> {}", path.as_path().display());
+                }
             }
             Err(e) => {
                 *response.body_mut() = Body::from(format!("{}", e));
-                match e.kind() {
-                    io::ErrorKind::NotFound => {
-                        *response.status_mut() = StatusCode::NOT_FOUND;
-                    }
-                    _ => {
-                        *response.status_mut() = StatusCode::INTERNAL_SERVER_ERROR;
-                    }
+                *response.status_mut() = match e.kind() {
+                    io::ErrorKind::NotFound => StatusCode::NOT_FOUND,
+                    _ => StatusCode::INTERNAL_SERVER_ERROR,
+                };
+                if !self.config.silent {
+                    println!("Response: {} -> {}", response.status().as_u16(), e);
                 }
             }
         }
