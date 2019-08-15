@@ -1,12 +1,10 @@
-use std::fs;
 use std::io;
 use std::path::{Component, Path, PathBuf};
 
-use hyper::{Body, Request, Response, StatusCode, Method};
+use hyper::{Body, Request};
 use walkdir::WalkDir;
 
 use crate::config::CounterfeitRunConfig;
-use crate::MultiFileIndexMap;
 
 
 pub trait DirPicker {
@@ -14,36 +12,34 @@ pub trait DirPicker {
 }
 
 pub struct StandardDirPicker {
-    base_path: String,
+    config: CounterfeitRunConfig,
 }
 
 impl StandardDirPicker {
-    pub fn new(base_path: &str) -> Self {
-        Self {
-            base_path: base_path.to_string(),
-        }
+    pub fn new(config: CounterfeitRunConfig) -> Self {
+        Self { config }
     }
 }
 
 impl DirPicker for StandardDirPicker {
     fn pick_directory(&mut self, request: &Request<Body>) -> io::Result<PathBuf> {
         let path = request.uri().path();
-        let full_path = PathBuf::from(format!("{}{}", &self.base_path, path));
+        let full_path = PathBuf::from(format!("{}{}", &self.config.base_path, path));
 
         if full_path.exists() {
             return Ok(full_path);
         }
 
-        let all_paths = list_dirs_recursive(&self.base_path);
+        let all_paths = list_dirs_recursive(&self.config.base_path);
 
         let matching_path = all_paths
             .iter()
-            .filter_map(|potential_path| PathMatch::get_match(&path, &potential_path, &self.config))
+            .filter_map(|potential_path| PathMatch::get_match(&path, potential_path, &self.config))
             .max_by(|p1, p2| p1.num_exact_matches.cmp(&p2.num_exact_matches));
 
         match matching_path {
-            Some(p) => PathBuf::from(p),
-            None => PathBuf::from(path),
+            Some(p) => Ok(PathBuf::from(p)),
+            None => Ok(PathBuf::from(path)),
         }
     }
 }
@@ -60,11 +56,14 @@ impl From<PathMatch> for PathBuf {
 }
 
 impl PathMatch {
-    pub fn get_match(
-        target: &Path,
-        potential: &Path,
+    pub fn get_match<T: AsRef<Path>, P: AsRef<Path>>(
+        target: &T,
+        potential: &P,
         config: &CounterfeitRunConfig,
     ) -> Option<Self> {
+        let target = target.as_ref();
+        let potential = potential.as_ref();
+
         if target.components().count() != potential.components().count() {
             return None;
         }
@@ -97,17 +96,6 @@ impl PathMatch {
 fn is_param(component: &Component, config: &CounterfeitRunConfig) -> bool {
     match component.as_os_str().to_str() {
         Some(s) => s.starts_with(&config.prefix) && s.ends_with(&config.postfix),
-        None => false,
-    }
-}
-
-fn file_matches(file_path: &PathBuf, method: &Method) -> bool {
-    let method_str = method.as_str().to_lowercase();
-
-    match file_path.file_stem().and_then(|stem| stem.to_str()) {
-        Some(stem) => {
-            stem == method_str || stem.to_lowercase().starts_with(&format!("{}_", method_str))
-        }
         None => false,
     }
 }
