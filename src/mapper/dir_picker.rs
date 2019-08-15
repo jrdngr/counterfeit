@@ -6,7 +6,6 @@ use walkdir::WalkDir;
 
 use crate::config::CounterfeitRunConfig;
 
-
 pub trait DirPicker {
     fn pick_directory(&mut self, request: &Request<Body>) -> io::Result<PathBuf>;
 }
@@ -23,11 +22,14 @@ impl StandardDirPicker {
 
 impl DirPicker for StandardDirPicker {
     fn pick_directory(&mut self, request: &Request<Body>) -> io::Result<PathBuf> {
-        let path = request.uri().path();
-        let full_path = PathBuf::from(format!("{}{}", &self.config.base_path, path));
+        let path = PathBuf::from(format!(
+            "{}{}",
+            &self.config.base_path,
+            request.uri().path()
+        ));
 
-        if full_path.exists() {
-            return Ok(full_path);
+        if path.exists() {
+            return Ok(path);
         }
 
         let all_paths = list_dirs_recursive(&self.config.base_path);
