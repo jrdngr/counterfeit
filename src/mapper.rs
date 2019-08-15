@@ -1,3 +1,4 @@
+use std::fs;
 use std::io;
 
 use hyper::{Body, Request, Response, StatusCode};
@@ -9,10 +10,10 @@ pub mod response_hook;
 
 pub use crate::mapper::dir_picker::{DirPicker, StandardDirPicker};
 pub use crate::mapper::file_picker::{FilePicker, StandardFilePicker};
-pub use crate::mapper::mutation_handler::{MutationHandler, ImmutableHandler};
-pub use crate::mapper::response_hook::{ResponseHook, IdentityResponseHook};
+pub use crate::mapper::mutation_handler::{ImmutableHandler, MutationHandler};
+pub use crate::mapper::response_hook::{IdentityResponseHook, ResponseHook};
 
-use crate::{MultiFileIndexMap, CounterfeitRunConfig};
+use crate::{CounterfeitRunConfig, MultiFileIndexMap};
 
 pub trait RequestMapper {
     fn map_request(&mut self, request: Request<Body>) -> io::Result<Response<Body>>;
@@ -31,7 +32,7 @@ where
     response_hook: R,
 }
 
-impl<D, F, M, R> FileMapper<D, F, M, R> 
+impl<D, F, M, R> FileMapper<D, F, M, R>
 where
     D: DirPicker,
     F: FilePicker,
@@ -68,11 +69,28 @@ where
 {
     fn map_request(&mut self, request: Request<Body>) -> io::Result<Response<Body>> {
         let directory = self.dir_picker.pick_directory(&request)?;
-        let _file = self.file_picker.pick_file(&directory, &request)?;
-        let mut response = Response::new(Body::empty());
-        *response.status_mut() = StatusCode::NOT_FOUND;
-
+        let file = self.file_picker.pick_file(&directory, &request);
         self.mutation_handler.apply_mutation(&request)?;
+
+        let mut response = Response::new(Body::empty());
+
+        match file {
+            Ok(path) => {
+                *response.body_mut() = Body::from(fs::read_to_string(&path)?);
+            }
+            Err(e) => {
+                *response.body_mut() = Body::from(format!("{}", e));
+                match e.kind() {
+                    io::ErrorKind::NotFound => {
+                        *response.status_mut() = StatusCode::NOT_FOUND;
+                    }
+                    _ => {
+                        *response.status_mut() = StatusCode::INTERNAL_SERVER_ERROR;
+                    }
+                }
+            }
+        }
+
         self.response_hook.process_response(response)
     }
 }
