@@ -7,10 +7,10 @@ pub mod file_picker;
 pub mod mutation_handler;
 pub mod response_hook;
 
-pub use crate::mapper::dir_picker::DirPicker;
-pub use crate::mapper::file_picker::FilePicker;
-pub use crate::mapper::mutation_handler::MutationHandler;
-pub use crate::mapper::response_hook::ResponseHook;
+pub use crate::mapper::dir_picker::{DirPicker, StandardDirPicker};
+pub use crate::mapper::file_picker::{FilePicker, StandardFilePicker};
+pub use crate::mapper::mutation_handler::{MutationHandler, ImmutableHandler};
+pub use crate::mapper::response_hook::{ResponseHook, IdentityResponseHook};
 
 pub trait RequestMapper {
     fn map_request(&mut self, request: Request<Body>) -> io::Result<Response<Body>>;
