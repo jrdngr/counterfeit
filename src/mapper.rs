@@ -1,5 +1,4 @@
 use std::io;
-use std::path::{Path, PathBuf};
 
 use hyper::{Body, Request, Response, StatusCode};
 
@@ -12,8 +11,6 @@ pub use crate::mapper::dir_picker::DirPicker;
 pub use crate::mapper::file_picker::FilePicker;
 pub use crate::mapper::mutation_handler::MutationHandler;
 pub use crate::mapper::response_hook::ResponseHook;
-
-use crate::config::CounterfeitRunConfig;
 
 pub trait RequestMapper {
     fn map_request(&mut self, request: Request<Body>) -> io::Result<Response<Body>>;
