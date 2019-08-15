@@ -1,5 +1,6 @@
 use std::collections::HashMap;
 use std::io;
+use std::error::Error;
 use std::path::PathBuf;
 use std::sync::{Arc, Mutex};
 
@@ -15,7 +16,7 @@ pub mod old_mapper;
 pub mod options;
 
 pub use crate::config::CounterfeitRunConfig;
-pub use crate::old_mapper::FileMapper;
+pub use crate::mapper::{FileMapper, RequestMapper};
 
 use crate::options::CounterfeitOptions;
 
@@ -34,21 +35,31 @@ fn run(config: CounterfeitRunConfig) -> io::Result<()> {
     let socket = config.socket;
 
     let make_service = make_service_fn(move |_| {
-        let mapper = FileMapper::new(config.clone(), Arc::clone(&index_map));
+        let mut mapper = FileMapper::standard(config.clone(), Arc::clone(&index_map));
         service_fn_ok(move |request| {
             let mut response = if request.method() == Method::OPTIONS {
                 Response::new(Body::empty())
             } else {
-                mapper.map_request(request)
+                match mapper.map_request(request) {
+                    Ok(response) => response,
+                    Err(e) => {
+                        let mut response = Response::new(Body::from(e.description().to_string()));
+                        *response.status_mut() = hyper::StatusCode::INTERNAL_SERVER_ERROR;
+                        response
+                    },
+                }
             };
+
             response.headers_mut().insert(
                 header::ACCESS_CONTROL_ALLOW_ORIGIN,
                 HeaderValue::from_static("*"),
             );
+
             response.headers_mut().insert(
                 header::ACCESS_CONTROL_ALLOW_METHODS,
                 HeaderValue::from_static("*"),
             );
+
             response.headers_mut().insert(
                 header::ACCESS_CONTROL_ALLOW_HEADERS,
                 HeaderValue::from_static("*"),
