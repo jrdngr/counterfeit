@@ -41,7 +41,7 @@ impl DirPicker for StandardDirPicker {
 
         match matching_path {
             Some(p) => Ok(PathBuf::from(p)),
-            None => Ok(PathBuf::from(path)),
+            None => Ok(path),
         }
     }
 }
