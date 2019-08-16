@@ -39,7 +39,7 @@ pub struct CounterfeitRunOptions {
     /// POST will add a new GET file and renumber all GET files.
     /// PUT will add a new GET file and delete any existing GET files.
     /// DELETE will delete all matching GET files.
-    /// PATCH will dif all matching GET files.
+    /// PATCH will diff all matching GET files.
     #[structopt(short = "w", long)]
     pub write: bool,
 
