@@ -5,12 +5,12 @@ use hyper::{Body, Request, Response, StatusCode};
 
 pub mod dir_picker;
 pub mod file_picker;
-pub mod mutation_handler;
+pub mod mutation;
 pub mod response_hook;
 
 pub use crate::mapper::dir_picker::{DirPicker, StandardDirPicker};
 pub use crate::mapper::file_picker::{FilePicker, StandardFilePicker};
-pub use crate::mapper::mutation_handler::{ImmutableHandler, MutationHandler};
+pub use crate::mapper::mutation::ResponseMutation;
 pub use crate::mapper::response_hook::{IdentityResponseHook, ResponseHook};
 
 use crate::{CounterfeitRunConfig, MultiFileIndexMap};
@@ -19,61 +19,58 @@ pub trait RequestMapper {
     fn map_request(&mut self, request: Request<Body>) -> io::Result<Response<Body>>;
 }
 
-pub struct FileMapper<D, F, M, R>
+pub struct FileMapper<D, F, R>
 where
     D: DirPicker,
     F: FilePicker,
-    M: MutationHandler,
     R: ResponseHook,
 {
     dir_picker: D,
     file_picker: F,
-    mutation_handler: M,
+    mutations: Vec<Box<dyn ResponseMutation>>,
     response_hook: R,
     config: CounterfeitRunConfig,
 }
 
-impl<D, F, M, R> FileMapper<D, F, M, R>
+impl<D, F, R> FileMapper<D, F, R>
 where
     D: DirPicker,
     F: FilePicker,
-    M: MutationHandler,
     R: ResponseHook,
 {
     pub fn new(
         dir_picker: D,
         file_picker: F,
-        mutation_handler: M,
+        mutations: Vec<Box<dyn ResponseMutation>>,
         response_hook: R,
         config: CounterfeitRunConfig,
     ) -> Self {
         Self {
             dir_picker,
             file_picker,
-            mutation_handler,
+            mutations,
             response_hook,
             config,
         }
     }
 }
 
-impl FileMapper<StandardDirPicker, StandardFilePicker, ImmutableHandler, IdentityResponseHook> {
+impl FileMapper<StandardDirPicker, StandardFilePicker, IdentityResponseHook> {
     pub fn standard(config: CounterfeitRunConfig, index_map: MultiFileIndexMap) -> Self {
         Self {
             dir_picker: StandardDirPicker::new(config.clone()),
             file_picker: StandardFilePicker::new(index_map),
-            mutation_handler: ImmutableHandler,
+            mutations: Vec::new(),
             response_hook: IdentityResponseHook,
             config,
         }
     }
 }
 
-impl<D, F, M, R> RequestMapper for FileMapper<D, F, M, R>
+impl<D, F, R> RequestMapper for FileMapper<D, F, R>
 where
     D: DirPicker,
     F: FilePicker,
-    M: MutationHandler,
     R: ResponseHook,
 {
     fn map_request(&mut self, request: Request<Body>) -> io::Result<Response<Body>> {
@@ -83,7 +80,10 @@ where
 
         let directory = self.dir_picker.pick_directory(&request)?;
         let file = self.file_picker.pick_file(&directory, &request);
-        self.mutation_handler.apply_mutation(&request)?;
+
+        for mutation in self.mutations.iter_mut() {
+            mutation.apply_mutation(&request)?;
+        }
 
         let mut response = Response::new(Body::empty());
 
