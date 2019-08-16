@@ -78,6 +78,17 @@ pub struct CounterfeitRunOptions {
         raw(conflicts_with_all = "&[\"param_prefix\", \"param_postfix\"]")
     )]
     pub param_surround: Option<String>,
+    
+    /// Unimplemented --
+    /// Server will return the first file it finds with this prefix and will not
+    /// loop through multiple files
+    #[structopt(long = "force")]
+    pub force_file_prefix: Option<String>,
+    
+    /// Unimplemented --
+    /// Server will ignore any file with this prefix
+    #[structopt(long = "ignore)]
+    pub ignore_file_prefix: Option<String>,
 }
 
 #[derive(StructOpt, Debug)]
