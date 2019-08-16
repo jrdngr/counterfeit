@@ -1,6 +1,6 @@
 use std::collections::HashMap;
-use std::io;
 use std::error::Error;
+use std::io;
 use std::path::PathBuf;
 use std::sync::{Arc, Mutex};
 
@@ -12,7 +12,6 @@ use structopt::StructOpt;
 
 pub mod config;
 pub mod mapper;
-pub mod old_mapper;
 pub mod options;
 
 pub use crate::config::CounterfeitRunConfig;
@@ -46,7 +45,7 @@ fn run(config: CounterfeitRunConfig) -> io::Result<()> {
                         let mut response = Response::new(Body::from(e.description().to_string()));
                         *response.status_mut() = hyper::StatusCode::INTERNAL_SERVER_ERROR;
                         response
-                    },
+                    }
                 }
             };
 
