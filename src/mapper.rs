@@ -1,5 +1,6 @@
 use std::fs;
 use std::io;
+use std::path::PathBuf;
 
 use hyper::{Body, Request, Response, StatusCode};
 
@@ -112,4 +113,8 @@ where
 
         self.response_hook.process_response(response)
     }
+}
+
+pub struct MapperResult {
+    file_path: Option<PathBuf>,
 }
