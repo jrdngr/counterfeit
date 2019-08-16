@@ -53,6 +53,10 @@ where
             config,
         }
     }
+
+    pub fn add_mutation(&mut self, mutation: impl ResponseMutation + 'static) {
+        self.mutations.push(Box::new(mutation));
+    }
 }
 
 impl FileMapper<StandardDirPicker, StandardFilePicker, IdentityResponseHook> {
