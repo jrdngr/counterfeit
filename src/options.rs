@@ -87,7 +87,7 @@ pub struct CounterfeitRunOptions {
     
     /// Unimplemented --
     /// Server will ignore any file with this prefix
-    #[structopt(long = "ignore)]
+    #[structopt(long = "ignore")]
     pub ignore_file_prefix: Option<String>,
 }
 
