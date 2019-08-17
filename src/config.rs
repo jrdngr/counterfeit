@@ -27,6 +27,8 @@ impl From<CounterfeitRunOptions> for CounterfeitRunConfig {
             param_prefix,
             param_postfix,
             param_surround,
+	    force_file_prefix,
+	    ignore_file_prefix,
         } = options;
 
         if let Some(port) = port {
