@@ -9,7 +9,7 @@ pub trait ResponseMutation: Send + Sync {
 pub struct CreateMissing;
 
 impl ResponseMutation for CreateMissing {
-    fn apply_mutation(&mut self, request: &Request<Body>) -> io::Result<()> {
+    fn apply_mutation(&mut self, _request: &Request<Body>) -> io::Result<()> {
         Ok(())
     }
 }
