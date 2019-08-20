@@ -116,19 +116,54 @@ where
     }
 }
 
+pub type MapperResult = Result<PathBuf, io::Error>;
+
 #[derive(Debug)]
-pub struct MapperOutput<T> {
+pub struct MapperOutput {
     request: Request<Body>,
     response: Response<Body>,
-    metadata: T,
+    result: MapperResult,
 }
 
-impl <T>  MapperOutput<T> {
-    pub fn new(request: Request<Body>, response: Response<Body>, metadata: T) -> Self {
+impl MapperOutput {
+    pub fn new(request: Request<Body>, response: Response<Body>, result: MapperResult) -> Self {
         Self {
             request,
             response,
-            metadata,
+            result,
+        }
+    }
+
+    pub fn from_file<P: AsRef<Path>>(request: Request<Body>, file_path: P) -> Self {
+        match fs::read_to_string(&file_path) {
+            Ok(path) => {
+                let mut response = Response::new(Body::from(path));
+                *response.status_mut() = StatusCode::OK;
+                set_default_headers(&mut response);
+
+                Self {
+                    request,
+                    response,
+                    result: Ok(PathBuf::from(file_path.as_ref())),
+                }
+            },
+            Err(e) => Self::from_error(request, e),
+        }
+    }
+
+    pub fn from_error(request: Request<Body>, error: io::Error) -> Self {
+        let mut response = Response::new(Body::from(format!("{}", &error)));
+        *response.status_mut() = match error.kind() {
+            io::ErrorKind::NotFound => StatusCode::NOT_FOUND,
+            _ => StatusCode::INTERNAL_SERVER_ERROR,
+        };
+        
+        set_default_headers(&mut response);
+
+        Self {
+            request, 
+            response,
+            result: Err(error),
         }
     }
 
@@ -144,44 +179,12 @@ impl <T>  MapperOutput<T> {
         &mut self.response
     }
 
-    pub fn metadata(&self) -> &T {
-        &self.metadata
+    pub fn result(&self) -> &MapperResult {
+        &self.result
     }
 
-    pub fn metadata_mut(&mut self) -> &mut T {
-        &mut self.metadata
-    }
-}
-
-impl MapperOutput<PathBuf> {
-    pub fn from_file<P: AsRef<Path>>(request: Request<Body>, file_path: P) -> io::Result<Self> {
-        let mut response = Response::new(Body::from(fs::read_to_string(&file_path)?));
-        *response.status_mut() = StatusCode::OK;
-        set_default_headers(&mut response);
-
-        Ok(Self {
-            request,
-            response,
-            metadata: PathBuf::from(file_path.as_ref()),
-        })
-    }
-}
-
-impl MapperOutput<io::Error> {
-    pub fn from_error(request: Request<Body>, error: io::Error) -> Self {
-        let mut response = Response::new(Body::from(format!("{}", &error)));
-        *response.status_mut() = match error.kind() {
-            io::ErrorKind::NotFound => StatusCode::NOT_FOUND,
-            _ => StatusCode::INTERNAL_SERVER_ERROR,
-        };
-        
-        set_default_headers(&mut response);
-
-        Self {
-            request, 
-            response,
-            metadata: error,
-        }
+    pub fn result_mut(&mut self) -> &mut MapperResult {
+        &mut self.result
     }
 }
 
@@ -202,8 +205,8 @@ fn set_default_headers(response: &mut Response<Body>) {
     );
 }
 
-impl <T> From<MapperOutput<T>> for Response<Body> {
-    fn from(mapper_output: MapperOutput<T>) -> Response<Body> {
+impl From<MapperOutput> for Response<Body> {
+    fn from(mapper_output: MapperOutput) -> Response<Body> {
         mapper_output.response
     }
 }
