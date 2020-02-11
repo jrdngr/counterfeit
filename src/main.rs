@@ -4,7 +4,6 @@ use std::io;
 use std::path::PathBuf;
 use std::sync::{Arc, Mutex};
 
-use hyper::header::{self, HeaderValue};
 use hyper::rt::Future;
 use hyper::service::{make_service_fn, service_fn_ok};
 use hyper::{Body, Method, Response, Server};
@@ -36,7 +35,7 @@ fn run(config: CounterfeitRunConfig) -> io::Result<()> {
     let make_service = make_service_fn(move |_| {
         let mut mapper = FileMapper::standard(config.clone(), Arc::clone(&index_map));
         service_fn_ok(move |request| {
-            let mut response = if request.method() == Method::OPTIONS {
+            if request.method() == Method::OPTIONS {
                 Response::new(Body::empty())
             } else {
                 match mapper.map_request(request) {
@@ -47,23 +46,7 @@ fn run(config: CounterfeitRunConfig) -> io::Result<()> {
                         response
                     }
                 }
-            };
-
-            response.headers_mut().insert(
-                header::ACCESS_CONTROL_ALLOW_ORIGIN,
-                HeaderValue::from_static("*"),
-            );
-
-            response.headers_mut().insert(
-                header::ACCESS_CONTROL_ALLOW_METHODS,
-                HeaderValue::from_static("*"),
-            );
-
-            response.headers_mut().insert(
-                header::ACCESS_CONTROL_ALLOW_HEADERS,
-                HeaderValue::from_static("*"),
-            );
-            response
+            }
         })
     });
 
