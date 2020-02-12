@@ -29,12 +29,6 @@ pub struct CounterfeitRunOptions {
     pub base_path: String,
 
     /// Unimplemented --
-    /// Paths will match if they have the same number of components.
-    /// The response will be the path with the greatest number of matching components.
-    #[structopt(short = "l", long)]
-    pub lenient: bool,
-
-    /// Unimplemented --
     /// Writes requests to disk depending on the HTTP method.
     /// POST will add a new GET file and renumber all GET files.
     /// PUT will add a new GET file and delete any existing GET files.
@@ -46,7 +40,7 @@ pub struct CounterfeitRunOptions {
     /// Unimplemented --
     /// If a request is received that has no matching response, an empty
     /// file will be created with the name of the method and a .json extension
-    #[structopt(short, long = "create")]
+    #[structopt(short, long)]
     pub create_missing: bool,
 
     /// Silences printing request and response info to the console
@@ -58,7 +52,7 @@ pub struct CounterfeitRunOptions {
     pub port: Option<u16>,
 
     /// Sets the socket address of the local server
-    #[structopt(short = "a", long, default_value = "127.0.0.1:3000")]
+    #[structopt(short = "a", long, default_value = "127.0.0.1:8000")]
     pub socket: SocketAddr,
 
     /// Sets the directory prefix for path parameters.
@@ -78,12 +72,6 @@ pub struct CounterfeitRunOptions {
         conflicts_with_all = &["param_prefix", "param_postfix"]
     )]
     pub param_surround: Option<String>,
-    
-    /// Unimplemented --
-    /// Server will return the first file it finds with this prefix and will not
-    /// loop through multiple files
-    #[structopt(long = "force")]
-    pub force_file_prefix: Option<String>,
     
     /// Unimplemented --
     /// Server will ignore any file with this prefix

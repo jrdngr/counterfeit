@@ -5,7 +5,6 @@ use crate::options::CounterfeitRunOptions;
 #[derive(Debug, Clone)]
 pub struct CounterfeitRunConfig {
     pub base_path: String,
-    pub lenient: bool,
     pub write: bool,
     pub create_missing: bool,
     pub silent: bool,
@@ -18,7 +17,6 @@ impl From<CounterfeitRunOptions> for CounterfeitRunConfig {
     fn from(options: CounterfeitRunOptions) -> Self {
         let CounterfeitRunOptions {
             base_path,
-            lenient,
             write,
             create_missing,
             silent,
@@ -42,7 +40,6 @@ impl From<CounterfeitRunOptions> for CounterfeitRunConfig {
 
         Self {
             base_path,
-            lenient,
             write,
             create_missing,
             silent,
