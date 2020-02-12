@@ -75,7 +75,7 @@ pub struct CounterfeitRunOptions {
     /// Example: "_" -> ../_anyIdentifier_/..
     #[structopt(
         long = "surround",
-        raw(conflicts_with_all = "&[\"param_prefix\", \"param_postfix\"]")
+        conflicts_with_all = &["param_prefix", "param_postfix"]
     )]
     pub param_surround: Option<String>,
     

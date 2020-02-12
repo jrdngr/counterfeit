@@ -1,8 +1,13 @@
 use std::fs;
 use std::io;
 use std::path::{Path, PathBuf};
+use std::task::{Context, Poll};
+use std::sync::Arc;
 
+use anyhow::Result;
+use futures::future;
 use hyper::{Body, Request, Response, StatusCode};
+use hyper::service::Service;
 use hyper::header::{self, HeaderValue};
 
 pub mod dir_picker;
@@ -15,11 +20,7 @@ pub use crate::mapper::mutation::ResponseMutation;
 
 use crate::{CounterfeitRunConfig, MultiFileIndexMap};
 
-pub trait RequestMapper {
-    fn map_request(&mut self, request: Request<Body>) -> io::Result<Response<Body>>;
-}
-
-pub struct FileMapper<D, F>
+pub struct FileMapperService<D, F>
 where
     D: DirPicker,
     F: FilePicker,
@@ -30,7 +31,7 @@ where
     config: CounterfeitRunConfig,
 }
 
-impl<D, F> FileMapper<D, F>
+impl<D, F> FileMapperService<D, F>
 where
     D: DirPicker,
     F: FilePicker,
@@ -54,7 +55,7 @@ where
     }
 }
 
-impl FileMapper<StandardDirPicker, StandardFilePicker> {
+impl FileMapperService<StandardDirPicker, StandardFilePicker> {
     pub fn standard(config: CounterfeitRunConfig, index_map: MultiFileIndexMap) -> Self {
         Self {
             dir_picker: StandardDirPicker::new(config.clone()),
@@ -65,29 +66,71 @@ impl FileMapper<StandardDirPicker, StandardFilePicker> {
     }
 }
 
-impl<D, F> RequestMapper for FileMapper<D, F>
+impl<D, F> Service<Request<Body>> for FileMapperService<D, F>
 where
     D: DirPicker,
     F: FilePicker,
 {
-    fn map_request(&mut self, request: Request<Body>) -> io::Result<Response<Body>> {
+    type Response = Response<Body>;
+    type Error = anyhow::Error;
+    type Future = future::Ready<Result<Self::Response, Self::Error>>;
+
+    fn poll_ready(&mut self, _: &mut Context<'_>) -> Poll<Result<(), Self::Error>> {
+        Poll::Ready(Ok(()))
+    }
+
+    fn call(&mut self, request: Request<Body>) -> Self::Future {
         if !self.config.silent {
             println!("Request: {} -> {}", request.method(), request.uri().path());
         }
 
-        let directory = self.dir_picker.pick_directory(&request)?;
-        let file = self.file_picker.pick_file(&directory, &request);
-        let mut output = MapperOutput::new(request, file);
-
-        for mutation in self.mutations.iter_mut() {
-            mutation.apply_mutation(&mut output)?;
+        match self.dir_picker.pick_directory(&request) {
+            Ok(directory) => {
+                let file = self.file_picker.pick_file(&directory, &request);
+                let mut output = MapperOutput::new(request, file);
+        
+                for mutation in self.mutations.iter() {
+                    if let Err(e) = mutation.apply_mutation(&mut output) {
+                        return future::err(e.into());
+                    }
+                }
+        
+                if !self.config.silent {
+                    println!("Response: {} -> {}", output.response.status(), output);
+                }
+        
+                future::ok(output.into())
+            },
+            Err(e) => future::err(e.into()),
         }
+    }
+}
 
-        if !self.config.silent {
-            println!("Response: {} -> {}", output.response.status(), output);
+pub struct MakeFileMapperService {
+    config: CounterfeitRunConfig,
+    index_map: MultiFileIndexMap,
+}
+
+impl MakeFileMapperService {
+    pub fn new(config: CounterfeitRunConfig, index_map: MultiFileIndexMap) -> Self {
+        Self {
+            config,
+            index_map,
         }
+    }
+}
 
-        Ok(output.into())
+impl<T> Service<T> for MakeFileMapperService {
+    type Response = FileMapperService<StandardDirPicker, StandardFilePicker>;
+    type Error = anyhow::Error;
+    type Future = future::Ready<Result<Self::Response, Self::Error>>;
+
+    fn poll_ready(&mut self, _cx: &mut Context<'_>) -> Poll<Result<(), Self::Error>> {
+        Ok(()).into()
+    }
+
+    fn call(&mut self, _: T) -> Self::Future {
+        future::ok(FileMapperService::standard(self.config.clone(), Arc::clone(&self.index_map)))
     }
 }
 

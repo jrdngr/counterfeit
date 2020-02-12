@@ -8,7 +8,7 @@ use crate::MultiFileIndexMap;
 use crate::mapper::MapperResult;
 
 pub trait FilePicker {
-    fn pick_file(&mut self, directory: &Path, request: &Request<Body>) -> MapperResult;
+    fn pick_file(&self, directory: &Path, request: &Request<Body>) -> MapperResult;
 }
 
 pub struct StandardFilePicker {
@@ -24,7 +24,7 @@ impl StandardFilePicker {
 }
 
 impl FilePicker for StandardFilePicker {
-    fn pick_file(&mut self, directory: &Path, request: &Request<Body>) -> MapperResult {
+    fn pick_file(&self, directory: &Path, request: &Request<Body>) -> MapperResult {
         let available_files = fs::read_dir(&directory)?
             .filter_map(Result::ok)
             .map(|entry| entry.path())

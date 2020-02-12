@@ -7,7 +7,7 @@ use crate::config::CounterfeitRunConfig;
 use crate::mapper::MapperResult;
 
 pub trait DirPicker {
-    fn pick_directory(&mut self, request: &Request<Body>) -> MapperResult;
+    fn pick_directory(&self, request: &Request<Body>) -> MapperResult;
 }
 
 pub struct StandardDirPicker {
@@ -21,7 +21,7 @@ impl StandardDirPicker {
 }
 
 impl DirPicker for StandardDirPicker {
-    fn pick_directory(&mut self, request: &Request<Body>) -> MapperResult {
+    fn pick_directory(&self, request: &Request<Body>) -> MapperResult {
         let path = PathBuf::from(format!(
             "{}{}",
             &self.config.base_path,
