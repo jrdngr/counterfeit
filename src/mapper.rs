@@ -59,7 +59,7 @@ impl FileMapperService<StandardDirPicker, StandardFilePicker> {
     pub fn standard(config: CounterfeitRunConfig, index_map: MultiFileIndexMap) -> Self {
         Self {
             dir_picker: StandardDirPicker::new(config.clone()),
-            file_picker: StandardFilePicker::new(index_map),
+            file_picker: StandardFilePicker::new(config.create_missing, index_map),
             mutations: Vec::new(),
             config,
         }

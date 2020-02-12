@@ -12,12 +12,14 @@ pub trait FilePicker {
 }
 
 pub struct StandardFilePicker {
+    create_missing: bool,
     multifile_indices: MultiFileIndexMap,
 }
 
 impl StandardFilePicker {
-    pub fn new(index_map: MultiFileIndexMap) -> Self {
+    pub fn new(create_missing: bool, index_map: MultiFileIndexMap) -> Self {
         Self {
+            create_missing,
             multifile_indices: index_map,
         }
     }
@@ -33,10 +35,22 @@ impl FilePicker for StandardFilePicker {
             .collect::<Vec<PathBuf>>();
 
         if available_files.is_empty() {
-            Err(io::Error::new(
-                io::ErrorKind::NotFound,
-                "No files available",
-            ))
+            if self.create_missing {
+                let file_name = format!("{}.json", request.method().to_string().to_lowercase());
+                
+                let mut path = PathBuf::new();
+                path.push(directory);
+                path.push(file_name);
+                
+                fs::File::create(&path)?;
+                
+                Ok(path)
+            } else {
+                Err(io::Error::new(
+                    io::ErrorKind::NotFound,
+                    "No files available",
+                ))
+            }
         } else {
             let mut indices = self.multifile_indices.lock().unwrap();
             let index = indices.entry(PathBuf::from(directory)).or_insert_with(|| 0);
