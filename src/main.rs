@@ -33,7 +33,7 @@ async fn run(config: CounterfeitRunConfig) -> Result<()> {
     let make_service = MakeFileMapperService::new(config, index_map);
 
     let server = Server::bind(&socket).serve(make_service);
-    println!("Serving files at {:?}", &socket);
+    println!("Serving files at: {}", &socket);
 
     server.await?;
 
