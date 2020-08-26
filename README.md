@@ -5,12 +5,16 @@ Counterfeit is a tool for simulating a REST API. API endpoints map directly to y
   * Any file whose name is an HTTP method will be used for that method
   * Anything prefixed with the method name and an underscore will be used for that method
 * Examples
-  * get.json
-  * post.json
-  * get_index.html
-  * post_info.txt
+  * `get.json`
+  * `post.json`
+  * `get_index.html`
+  * `post_info.txt`
 * If there are multiple files available, the response will rotate through all of them. The order will always be the same when the list repeats
+  * `get_first.json`
+  * `get_second.json`
+  * `get_third.json`
 * Any directory prefixed *and* postfixed with an underscore will function as a path variable. Any text can be substituted for this component of the path
+  * `/user/_userId_/profile`
 
 # Features In-Progress
 
