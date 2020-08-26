@@ -9,6 +9,7 @@ Counterfeit is a tool for simulating a REST API. API endpoints map directly to y
   * `post.json`
   * `get_index.html`
   * `post_info.txt`
+* Response bodies are simply the contents of the matching file
 * If there are multiple files available, the response will rotate through all of them. The order will always be the same when the list repeats
   * `get_first.json`
   * `get_second.json`
