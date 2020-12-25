@@ -1,0 +1,15 @@
+[package]
+name = "counterfeit"
+description = "Mock your REST API with files"
+license = "MIT"
+version = "0.1.0"
+authors = ["picklenerd <jordan.t.grace@gmail.com>"]
+edition = "2018"
+
+[dependencies]
+anyhow = "1.0"
+futures = "0.3"
+hyper = "0.13"
+structopt = "0.3"
+tokio = { version = "0.2", features = ["full"] }
+walkdir = "2.3"
