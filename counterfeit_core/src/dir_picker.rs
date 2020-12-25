@@ -3,9 +3,10 @@ use std::path::{Component, Path, PathBuf};
 use walkdir::WalkDir;
 
 use crate::config::CounterfeitRunConfig;
+use crate::Error;
 
-pub trait DirPicker {
-    fn pick_directory(&self, request: &Request<Body>) -> MapperResult;
+pub trait DirPicker<R> {
+    fn pick_directory(&self, request: &R) -> Result<PathBuf, Error>;
 }
 
 pub struct StandardDirPicker {
@@ -18,12 +19,16 @@ impl StandardDirPicker {
     }
 }
 
-impl DirPicker for StandardDirPicker {
-    fn pick_directory(&self, request: &Request<Body>) -> MapperResult {
+pub struct StandardDirPickerRequest {
+    uri_path: String,
+}
+
+impl DirPicker<StandardDirPickerRequest> for StandardDirPicker {
+    fn pick_directory(&self, request: &StandardDirPickerRequest) -> Result<PathBuf, Error> {
         let path = PathBuf::from(format!(
             "{}{}",
             &self.config.base_path,
-            request.uri().path()
+            request.uri_path
         ));
 
         if path.exists() {
