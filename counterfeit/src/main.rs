@@ -1,3 +1,6 @@
+pub mod options;
+pub mod services;
+
 use std::collections::HashMap;
 use std::sync::{Arc, Mutex};
 
@@ -6,7 +9,6 @@ use counterfeit_core::{CounterfeitRunConfig, MakeFileMapperService, MultiFileInd
 use hyper::Server;
 use structopt::StructOpt;
 
-pub mod options;
 
 use crate::options::CounterfeitOptions;
 

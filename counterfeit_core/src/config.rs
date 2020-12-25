@@ -10,4 +10,3 @@ pub struct CounterfeitRunConfig {
     pub prefix: String,
     pub postfix: String,
 }
-

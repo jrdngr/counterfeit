@@ -5,18 +5,11 @@ use std::task::{Context, Poll};
 use std::sync::Arc;
 
 use anyhow::Result;
+use counterfeit_core::mapper::{DirPicker, FilePicker, StandardDirPicker, StandardFilePicker};
 use futures::future;
 use hyper::{Body, Request, Response, StatusCode};
 use hyper::service::Service;
 use hyper::header::{self, HeaderValue};
-
-pub mod dir_picker;
-pub mod file_picker;
-pub mod mutation;
-
-pub use crate::mapper::dir_picker::{DirPicker, StandardDirPicker};
-pub use crate::mapper::file_picker::{FilePicker, StandardFilePicker};
-pub use crate::mapper::mutation::ResponseMutation;
 
 use crate::{CounterfeitRunConfig, MultiFileIndexMap};
 
@@ -27,7 +20,6 @@ where
 {
     dir_picker: D,
     file_picker: F,
-    mutations: Vec<Box<dyn ResponseMutation>>,
     config: CounterfeitRunConfig,
 }
 
@@ -39,19 +31,13 @@ where
     pub fn new(
         dir_picker: D,
         file_picker: F,
-        mutations: Vec<Box<dyn ResponseMutation>>,
         config: CounterfeitRunConfig,
     ) -> Self {
         Self {
             dir_picker,
             file_picker,
-            mutations,
             config,
         }
-    }
-
-    pub fn add_mutation(&mut self, mutation: impl ResponseMutation + 'static) {
-        self.mutations.push(Box::new(mutation));
     }
 }
 
@@ -60,7 +46,6 @@ impl FileMapperService<StandardDirPicker, StandardFilePicker> {
         Self {
             dir_picker: StandardDirPicker::new(config.clone()),
             file_picker: StandardFilePicker::new(config.create_missing, index_map),
-            mutations: Vec::new(),
             config,
         }
     }
@@ -88,12 +73,6 @@ where
             Ok(directory) => {
                 let file = self.file_picker.pick_file(&directory, &request);
                 let mut output = MapperOutput::new(request, file);
-        
-                for mutation in self.mutations.iter() {
-                    if let Err(e) = mutation.apply_mutation(&mut output) {
-                        return future::err(e.into());
-                    }
-                }
         
                 if !self.config.silent {
                     println!("Response: {} -> {}", output.response.status(), output);

@@ -1,10 +1,8 @@
 use std::path::{Component, Path, PathBuf};
 
-use hyper::{Body, Request};
 use walkdir::WalkDir;
 
 use crate::config::CounterfeitRunConfig;
-use crate::mapper::MapperResult;
 
 pub trait DirPicker {
     fn pick_directory(&self, request: &Request<Body>) -> MapperResult;
