@@ -5,10 +5,10 @@ use std::collections::HashMap;
 use std::sync::{Arc, Mutex};
 
 use anyhow::Result;
-use counterfeit_core::{CounterfeitRunConfig, MakeFileMapperService, MultiFileIndexMap};
+use counterfeit_core::{CounterfeitRunConfig, MultiFileIndexMap};
 use hyper::Server;
+use services::MakeFileMapperService;
 use structopt::StructOpt;
-
 
 use crate::options::CounterfeitOptions;
 

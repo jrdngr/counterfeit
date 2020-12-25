@@ -5,7 +5,7 @@ use std::task::{Context, Poll};
 use std::sync::Arc;
 
 use anyhow::Result;
-use counterfeit_core::mapper::{DirPicker, FilePicker, StandardDirPicker, StandardFilePicker};
+use counterfeit_core::{DirPicker, FilePicker, StandardDirPicker, StandardFilePicker};
 use futures::future;
 use hyper::{Body, Request, Response, StatusCode};
 use hyper::service::Service;
@@ -13,20 +13,20 @@ use hyper::header::{self, HeaderValue};
 
 use crate::{CounterfeitRunConfig, MultiFileIndexMap};
 
-pub struct FileMapperService<D, F>
+pub struct FileMapperService<D, F, R>
 where
-    D: DirPicker,
-    F: FilePicker,
+    D: DirPicker<R>,
+    F: FilePicker<R>,
 {
     dir_picker: D,
     file_picker: F,
     config: CounterfeitRunConfig,
 }
 
-impl<D, F> FileMapperService<D, F>
+impl<D, F, R> FileMapperService<D, F, R>
 where
-    D: DirPicker,
-    F: FilePicker,
+    D: DirPicker<R>,
+    F: FilePicker<R>,
 {
     pub fn new(
         dir_picker: D,
@@ -41,7 +41,7 @@ where
     }
 }
 
-impl FileMapperService<StandardDirPicker, StandardFilePicker> {
+impl FileMapperService<StandardDirPicker, StandardFilePicker, Request<Body>> {
     pub fn standard(config: CounterfeitRunConfig, index_map: MultiFileIndexMap) -> Self {
         Self {
             dir_picker: StandardDirPicker::new(config.clone()),
