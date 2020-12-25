@@ -76,16 +76,24 @@ name = "counterfeit"
 version = "0.1.0"
 dependencies = [
  "anyhow",
+ "counterfeit_core",
+ "futures",
+ "hyper",
+ "structopt",
+ "tokio",
+]
+
+[[package]]
+name = "counterfeit_core"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
  "futures",
  "hyper",
  "structopt",
  "tokio",
  "walkdir",
 ]
-
-[[package]]
-name = "counterfeit_core"
-version = "0.1.0"
 
 [[package]]
 name = "fnv"

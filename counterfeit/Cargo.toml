@@ -7,9 +7,9 @@ authors = ["picklenerd <jordan.t.grace@gmail.com>"]
 edition = "2018"
 
 [dependencies]
+counterfeit_core = { path = "../counterfeit_core" }
 anyhow = "1.0"
 futures = "0.3"
 hyper = "0.13"
 structopt = "0.3"
 tokio = { version = "0.2", features = ["full"] }
-walkdir = "2.3"
