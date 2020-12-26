@@ -1,75 +1,61 @@
-use std::fs;
 use std::io;
 use std::path::{Path, PathBuf};
-use std::task::{Context, Poll};
 use std::sync::Arc;
+use std::task::{Context, Poll};
+use std::{fs, marker::PhantomData};
 
 use anyhow::Result;
+use counterfeit_core::{
+    DefaultDirPicker, DefaultFilePicker, DefaultRequest, DirPicker, Error, FilePicker,
+};
 use futures::future;
-use hyper::{Body, Request, Response, StatusCode};
-use hyper::service::Service;
 use hyper::header::{self, HeaderValue};
-
-pub mod dir_picker;
-pub mod file_picker;
-pub mod mutation;
-
-pub use crate::mapper::dir_picker::{DirPicker, StandardDirPicker};
-pub use crate::mapper::file_picker::{FilePicker, StandardFilePicker};
-pub use crate::mapper::mutation::ResponseMutation;
+use hyper::service::Service;
+use hyper::{Body, Request, Response, StatusCode};
 
 use crate::{CounterfeitRunConfig, MultiFileIndexMap};
 
-pub struct FileMapperService<D, F>
+pub struct FileMapperService<D, F, R>
 where
-    D: DirPicker,
-    F: FilePicker,
+    D: DirPicker<R>,
+    F: FilePicker<R>,
 {
     dir_picker: D,
     file_picker: F,
-    mutations: Vec<Box<dyn ResponseMutation>>,
     config: CounterfeitRunConfig,
+    _request: PhantomData<R>,
 }
 
-impl<D, F> FileMapperService<D, F>
+impl<D, F, R> FileMapperService<D, F, R>
 where
-    D: DirPicker,
-    F: FilePicker,
+    D: DirPicker<R>,
+    F: FilePicker<R>,
 {
-    pub fn new(
-        dir_picker: D,
-        file_picker: F,
-        mutations: Vec<Box<dyn ResponseMutation>>,
-        config: CounterfeitRunConfig,
-    ) -> Self {
+    pub fn new(dir_picker: D, file_picker: F, config: CounterfeitRunConfig) -> Self {
         Self {
             dir_picker,
             file_picker,
-            mutations,
             config,
+            _request: PhantomData,
         }
-    }
-
-    pub fn add_mutation(&mut self, mutation: impl ResponseMutation + 'static) {
-        self.mutations.push(Box::new(mutation));
     }
 }
 
-impl FileMapperService<StandardDirPicker, StandardFilePicker> {
-    pub fn standard(config: CounterfeitRunConfig, index_map: MultiFileIndexMap) -> Self {
+impl FileMapperService<DefaultDirPicker, DefaultFilePicker, DefaultRequest> {
+    pub fn default(config: CounterfeitRunConfig, index_map: MultiFileIndexMap) -> Self {
         Self {
-            dir_picker: StandardDirPicker::new(config.clone()),
-            file_picker: StandardFilePicker::new(config.create_missing, index_map),
-            mutations: Vec::new(),
+            dir_picker: DefaultDirPicker::new(config.clone()),
+            file_picker: DefaultFilePicker::new(config.create_missing, index_map),
             config,
+            _request: PhantomData,
         }
     }
 }
 
-impl<D, F> Service<Request<Body>> for FileMapperService<D, F>
+impl<D, F> Service<Request<Body>> for FileMapperService<D, F, DefaultRequest>
 where
-    D: DirPicker,
-    F: FilePicker,
+    D: DirPicker<DefaultRequest>,
+    F: FilePicker<DefaultRequest>,
 {
     type Response = Response<Body>;
     type Error = anyhow::Error;
@@ -84,23 +70,19 @@ where
             println!("Request: {} -> {}", request.method(), request.uri().path());
         }
 
-        match self.dir_picker.pick_directory(&request) {
+        let default_request = create_default_request(&request);
+
+        match self.dir_picker.pick_directory(&default_request) {
             Ok(directory) => {
-                let file = self.file_picker.pick_file(&directory, &request);
-                let mut output = MapperOutput::new(request, file);
-        
-                for mutation in self.mutations.iter() {
-                    if let Err(e) = mutation.apply_mutation(&mut output) {
-                        return future::err(e.into());
-                    }
-                }
-        
+                let file = self.file_picker.pick_file(&directory, &default_request);
+                let output = MapperOutput::new(request, file);
+
                 if !self.config.silent {
                     println!("Response: {} -> {}", output.response.status(), output);
                 }
-        
+
                 future::ok(output.into())
-            },
+            }
             Err(e) => future::err(e.into()),
         }
     }
@@ -113,15 +95,12 @@ pub struct MakeFileMapperService {
 
 impl MakeFileMapperService {
     pub fn new(config: CounterfeitRunConfig, index_map: MultiFileIndexMap) -> Self {
-        Self {
-            config,
-            index_map,
-        }
+        Self { config, index_map }
     }
 }
 
 impl<T> Service<T> for MakeFileMapperService {
-    type Response = FileMapperService<StandardDirPicker, StandardFilePicker>;
+    type Response = FileMapperService<DefaultDirPicker, DefaultFilePicker, DefaultRequest>;
     type Error = anyhow::Error;
     type Future = future::Ready<Result<Self::Response, Self::Error>>;
 
@@ -130,11 +109,14 @@ impl<T> Service<T> for MakeFileMapperService {
     }
 
     fn call(&mut self, _: T) -> Self::Future {
-        future::ok(FileMapperService::standard(self.config.clone(), Arc::clone(&self.index_map)))
+        future::ok(FileMapperService::default(
+            self.config.clone(),
+            Arc::clone(&self.index_map),
+        ))
     }
 }
 
-pub type MapperResult = Result<PathBuf, io::Error>;
+pub type MapperResult = Result<PathBuf, Error>;
 
 #[derive(Debug)]
 pub struct MapperOutput {
@@ -164,15 +146,17 @@ impl MapperOutput {
                 *response.status_mut() = StatusCode::OK;
                 set_default_headers(&mut response);
                 response
-            },
-            Err(e) => Self::response_from_error(&e),
+            }
+            Err(e) => Self::response_from_error(&Error::IoError(e)),
         }
     }
 
-    fn response_from_error(error: &io::Error) -> Response<Body> {
+    fn response_from_error(error: &Error) -> Response<Body> {
         let mut response = Response::new(Body::from(format!("{}", error)));
-        *response.status_mut() = match error.kind() {
-            io::ErrorKind::NotFound => StatusCode::NOT_FOUND,
+        *response.status_mut() = match error {
+            Error::IoError(io_error) if io_error.kind() == io::ErrorKind::NotFound => {
+                StatusCode::NOT_FOUND
+            }
             _ => StatusCode::INTERNAL_SERVER_ERROR,
         };
         set_default_headers(&mut response);
@@ -230,4 +214,11 @@ fn set_default_headers(response: &mut Response<Body>) {
         header::ACCESS_CONTROL_ALLOW_HEADERS,
         HeaderValue::from_static("*"),
     );
+}
+
+fn create_default_request(request: &Request<Body>) -> DefaultRequest {
+    DefaultRequest {
+        method: request.method().to_string(),
+        uri_path: request.uri().path().to_string(),
+    }
 }

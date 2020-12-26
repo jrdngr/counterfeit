@@ -1,21 +1,16 @@
+pub mod options;
+pub mod services;
+
 use std::collections::HashMap;
-use std::path::PathBuf;
 use std::sync::{Arc, Mutex};
 
 use anyhow::Result;
+use counterfeit_core::{CounterfeitRunConfig, MultiFileIndexMap};
 use hyper::Server;
+use services::MakeFileMapperService;
 use structopt::StructOpt;
 
-pub mod config;
-pub mod mapper;
-pub mod options;
-
-pub use crate::config::CounterfeitRunConfig;
-pub use crate::mapper::MakeFileMapperService;
-
 use crate::options::CounterfeitOptions;
-
-pub type MultiFileIndexMap = Arc<Mutex<HashMap<PathBuf, usize>>>;
 
 #[tokio::main]
 async fn main() -> Result<()> {
@@ -29,7 +24,7 @@ async fn run(config: CounterfeitRunConfig) -> Result<()> {
     let index_map: MultiFileIndexMap = Arc::new(Mutex::new(HashMap::new()));
 
     let socket = config.socket;
-   
+
     let make_service = MakeFileMapperService::new(config, index_map);
 
     let server = Server::bind(&socket).serve(make_service);

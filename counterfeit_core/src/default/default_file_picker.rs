@@ -2,21 +2,15 @@ use std::fs;
 use std::io;
 use std::path::{Path, PathBuf};
 
-use hyper::{Body, Method, Request};
+use crate::Error;
+use crate::{DefaultRequest, FilePicker, MultiFileIndexMap};
 
-use crate::MultiFileIndexMap;
-use crate::mapper::MapperResult;
-
-pub trait FilePicker {
-    fn pick_file(&self, directory: &Path, request: &Request<Body>) -> MapperResult;
-}
-
-pub struct StandardFilePicker {
+pub struct DefaultFilePicker {
     create_missing: bool,
     multifile_indices: MultiFileIndexMap,
 }
 
-impl StandardFilePicker {
+impl DefaultFilePicker {
     pub fn new(create_missing: bool, index_map: MultiFileIndexMap) -> Self {
         Self {
             create_missing,
@@ -25,31 +19,28 @@ impl StandardFilePicker {
     }
 }
 
-impl FilePicker for StandardFilePicker {
-    fn pick_file(&self, directory: &Path, request: &Request<Body>) -> MapperResult {
+impl FilePicker<DefaultRequest> for DefaultFilePicker {
+    fn pick_file(&self, directory: &Path, request: &DefaultRequest) -> Result<PathBuf, Error> {
         let available_files = fs::read_dir(&directory)?
             .filter_map(Result::ok)
             .map(|entry| entry.path())
             .filter(|p| p.is_file())
-            .filter(|p| file_matches(p, request.method()))
+            .filter(|p| file_matches(p, &request.method))
             .collect::<Vec<PathBuf>>();
 
         if available_files.is_empty() {
             if self.create_missing {
-                let file_name = format!("{}.json", request.method().to_string().to_lowercase());
-                
+                let file_name = format!("{}.json", request.method.to_lowercase());
+
                 let mut path = PathBuf::new();
                 path.push(directory);
                 path.push(file_name);
-                
+
                 fs::File::create(&path)?;
-                
+
                 Ok(path)
             } else {
-                Err(io::Error::new(
-                    io::ErrorKind::NotFound,
-                    "No files available",
-                ))
+                Err(io::Error::new(io::ErrorKind::NotFound, "No files available").into())
             }
         } else {
             let mut indices = self.multifile_indices.lock().unwrap();
@@ -63,14 +54,14 @@ impl FilePicker for StandardFilePicker {
                     *index += 1;
                     Ok(file)
                 }
-                None => Err(io::Error::new(io::ErrorKind::Other, "Could not read file")),
+                None => Err(io::Error::new(io::ErrorKind::Other, "Could not read file").into()),
             }
         }
     }
 }
 
-fn file_matches(file_path: &PathBuf, method: &Method) -> bool {
-    let method_str = method.as_str().to_lowercase();
+fn file_matches(file_path: &PathBuf, method: &str) -> bool {
+    let method_str = method.to_lowercase();
 
     match file_path.file_stem().and_then(|stem| stem.to_str()) {
         Some(stem) => {

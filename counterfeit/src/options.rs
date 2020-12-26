@@ -1,5 +1,5 @@
+use counterfeit_core::CounterfeitRunConfig;
 use std::net::SocketAddr;
-
 use structopt::StructOpt;
 
 /// Counterfeit is a tool for simulating a REST API.
@@ -72,7 +72,7 @@ pub struct CounterfeitRunOptions {
         conflicts_with_all = &["param_prefix", "param_postfix"]
     )]
     pub param_surround: Option<String>,
-    
+
     /// Unimplemented --
     /// Server will ignore any file with this prefix
     #[structopt(long = "ignore")]
@@ -90,4 +90,41 @@ pub struct CounterfeitSaveOptions {
     /// If a file already exists in the target directory, it will be overwritten
     #[structopt(short = "o", long)]
     pub overwrite: bool,
+}
+
+impl From<CounterfeitRunOptions> for CounterfeitRunConfig {
+    fn from(options: CounterfeitRunOptions) -> Self {
+        let CounterfeitRunOptions {
+            base_path,
+            write,
+            create_missing,
+            silent,
+            mut socket,
+            port,
+            param_prefix,
+            param_postfix,
+            param_surround,
+            ..
+        } = options;
+
+        if let Some(port) = port {
+            socket.set_port(port);
+        }
+
+        let (prefix, postfix) = if let Some(surround) = param_surround {
+            (surround.clone(), surround)
+        } else {
+            (param_prefix, param_postfix)
+        };
+
+        Self {
+            base_path,
+            write,
+            create_missing,
+            silent,
+            socket,
+            prefix,
+            postfix,
+        }
+    }
 }
