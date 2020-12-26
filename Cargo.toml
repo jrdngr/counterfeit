@@ -1,6 +1,8 @@
 [workspace]
-
 members = [
     "counterfeit",
     "counterfeit_core",
 ]
+
+[patch.crates-io]
+counterfeit_core = { path = "./counterfeit_core" }
