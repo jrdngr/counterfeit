@@ -73,7 +73,7 @@ dependencies = [
 
 [[package]]
 name = "counterfeit"
-version = "0.1.0"
+version = "0.2.0"
 dependencies = [
  "anyhow",
  "counterfeit_core",
@@ -85,7 +85,7 @@ dependencies = [
 
 [[package]]
 name = "counterfeit_core"
-version = "0.1.0"
+version = "0.2.0"
 dependencies = [
  "structopt",
  "walkdir",

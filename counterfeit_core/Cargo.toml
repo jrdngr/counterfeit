@@ -1,6 +1,8 @@
 [package]
 name = "counterfeit_core"
-version = "0.1.0"
+description = "Backend code for counterfeit crate"
+license = "MIT"
+version = "0.2.0"
 authors = ["Jordan Grace <jordan.t.grace@gmail.com>"]
 edition = "2018"
 

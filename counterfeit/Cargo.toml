@@ -2,7 +2,7 @@
 name = "counterfeit"
 description = "Mock your REST API with files"
 license = "MIT"
-version = "0.1.0"
+version = "0.2.0"
 authors = ["picklenerd <jordan.t.grace@gmail.com>"]
 edition = "2018"
 
