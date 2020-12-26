@@ -24,7 +24,7 @@ async fn run(config: CounterfeitRunConfig) -> Result<()> {
     let index_map: MultiFileIndexMap = Arc::new(Mutex::new(HashMap::new()));
 
     let socket = config.socket;
-   
+
     let make_service = MakeFileMapperService::new(config, index_map);
 
     let server = Server::bind(&socket).serve(make_service);

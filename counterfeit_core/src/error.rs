@@ -1,6 +1,6 @@
-use std::io;
-use std::fmt;
 use std::error::Error as StdError;
+use std::fmt;
+use std::io;
 
 #[derive(Debug)]
 pub enum Error {

@@ -2,8 +2,8 @@ use std::path::{Component, Path, PathBuf};
 
 use walkdir::WalkDir;
 
-use crate::{DefaultRequest, DirPicker, config::CounterfeitRunConfig};
 use crate::Error;
+use crate::{config::CounterfeitRunConfig, DefaultRequest, DirPicker};
 
 pub struct DefaultDirPicker {
     config: CounterfeitRunConfig,
@@ -15,15 +15,9 @@ impl DefaultDirPicker {
     }
 }
 
-impl DirPicker for DefaultDirPicker {
-    type Request = DefaultRequest;
-
+impl DirPicker<DefaultRequest> for DefaultDirPicker {
     fn pick_directory(&self, request: &DefaultRequest) -> Result<PathBuf, Error> {
-        let path = PathBuf::from(format!(
-            "{}{}",
-            &self.config.base_path,
-            request.uri_path
-        ));
+        let path = PathBuf::from(format!("{}{}", &self.config.base_path, request.uri_path));
 
         if path.exists() {
             return Ok(path);

@@ -1,5 +1,5 @@
-use std::net::SocketAddr;
 use counterfeit_core::CounterfeitRunConfig;
+use std::net::SocketAddr;
 use structopt::StructOpt;
 
 /// Counterfeit is a tool for simulating a REST API.
@@ -72,7 +72,7 @@ pub struct CounterfeitRunOptions {
         conflicts_with_all = &["param_prefix", "param_postfix"]
     )]
     pub param_surround: Option<String>,
-    
+
     /// Unimplemented --
     /// Server will ignore any file with this prefix
     #[structopt(long = "ignore")]
@@ -112,7 +112,7 @@ impl From<CounterfeitRunOptions> for CounterfeitRunConfig {
         }
 
         let (prefix, postfix) = if let Some(surround) = param_surround {
-            (surround.clone(), surround.clone())
+            (surround.clone(), surround)
         } else {
             (param_prefix, param_postfix)
         };

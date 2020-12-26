@@ -5,8 +5,8 @@ pub mod error;
 pub mod file_picker;
 
 pub use config::CounterfeitRunConfig;
-pub use dir_picker::DirPicker;
 pub use default::{DefaultDirPicker, DefaultFilePicker, DefaultRequest};
+pub use dir_picker::DirPicker;
 pub use error::Error;
 pub use file_picker::FilePicker;
 

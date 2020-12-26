@@ -2,14 +2,13 @@ use std::fs;
 use std::io;
 use std::path::{Path, PathBuf};
 
-use crate::{DefaultRequest, FilePicker, MultiFileIndexMap};
 use crate::Error;
+use crate::{DefaultRequest, FilePicker, MultiFileIndexMap};
 
 pub struct DefaultFilePicker {
     create_missing: bool,
     multifile_indices: MultiFileIndexMap,
 }
-
 
 impl DefaultFilePicker {
     pub fn new(create_missing: bool, index_map: MultiFileIndexMap) -> Self {
@@ -20,9 +19,7 @@ impl DefaultFilePicker {
     }
 }
 
-impl FilePicker for DefaultFilePicker {
-    type Request = DefaultRequest;
-
+impl FilePicker<DefaultRequest> for DefaultFilePicker {
     fn pick_file(&self, directory: &Path, request: &DefaultRequest) -> Result<PathBuf, Error> {
         let available_files = fs::read_dir(&directory)?
             .filter_map(Result::ok)
@@ -34,19 +31,16 @@ impl FilePicker for DefaultFilePicker {
         if available_files.is_empty() {
             if self.create_missing {
                 let file_name = format!("{}.json", request.method.to_lowercase());
-                
+
                 let mut path = PathBuf::new();
                 path.push(directory);
                 path.push(file_name);
-                
+
                 fs::File::create(&path)?;
-                
+
                 Ok(path)
             } else {
-                Err(io::Error::new(
-                    io::ErrorKind::NotFound,
-                    "No files available",
-                ).into())
+                Err(io::Error::new(io::ErrorKind::NotFound, "No files available").into())
             }
         } else {
             let mut indices = self.multifile_indices.lock().unwrap();
