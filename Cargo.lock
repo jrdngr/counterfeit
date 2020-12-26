@@ -93,6 +93,7 @@ dependencies = [
 name = "counterfeit_core"
 version = "0.2.0"
 dependencies = [
+ "hyper",
  "structopt",
  "walkdir",
 ]

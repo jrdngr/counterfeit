@@ -1,23 +1,31 @@
+use hyper::{Body, Request};
 use std::path::{Component, Path, PathBuf};
-
 use walkdir::WalkDir;
 
 use crate::Error;
-use crate::{config::CounterfeitRunConfig, DefaultRequest, DirPicker};
+use crate::{config::CounterfeitRunConfig, Dispatcher};
 
-pub struct DefaultDirPicker {
+pub struct DefaultDirDispatcher {
     config: CounterfeitRunConfig,
 }
 
-impl DefaultDirPicker {
+impl DefaultDirDispatcher {
     pub fn new(config: CounterfeitRunConfig) -> Self {
         Self { config }
     }
 }
 
-impl DirPicker<DefaultRequest> for DefaultDirPicker {
-    fn pick_directory(&self, request: &DefaultRequest) -> Result<PathBuf, Error> {
-        let path = PathBuf::from(format!("{}{}", &self.config.base_path, request.uri_path));
+impl Dispatcher for DefaultDirDispatcher {
+    fn dispatch(
+        &self,
+        _base_directory: impl AsRef<Path>,
+        request: &Request<Body>,
+    ) -> Result<PathBuf, Error> {
+        let path = PathBuf::from(format!(
+            "{}{}",
+            &self.config.base_path,
+            request.uri().path()
+        ));
 
         if path.exists() {
             return Ok(path);

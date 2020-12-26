@@ -1,13 +1,11 @@
+use std::fs;
 use std::io;
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
 use std::task::{Context, Poll};
-use std::{fs, marker::PhantomData};
 
 use anyhow::Result;
-use counterfeit_core::{
-    DefaultDirPicker, DefaultFilePicker, DefaultRequest, DirPicker, Error, FilePicker,
-};
+use counterfeit_core::{DefaultDirDispatcher, DefaultFileDispatcher, Dispatcher, Error};
 use futures::future;
 use hyper::header::{self, HeaderValue};
 use hyper::service::Service;
@@ -15,48 +13,37 @@ use hyper::{Body, Request, Response, StatusCode};
 
 use crate::{CounterfeitRunConfig, MultiFileIndexMap};
 
-pub struct FileMapperService<D, F, R>
-where
-    D: DirPicker<R>,
-    F: FilePicker<R>,
-{
-    dir_picker: D,
-    file_picker: F,
+pub struct FileMapperService {
+    dir_dispatcher: DefaultDirDispatcher,
+    file_dispatcher: DefaultFileDispatcher,
     config: CounterfeitRunConfig,
-    _request: PhantomData<R>,
 }
 
-impl<D, F, R> FileMapperService<D, F, R>
-where
-    D: DirPicker<R>,
-    F: FilePicker<R>,
-{
-    pub fn new(dir_picker: D, file_picker: F, config: CounterfeitRunConfig) -> Self {
+impl FileMapperService {
+    pub fn new(
+        dir_dispatcher: DefaultDirDispatcher,
+        file_dispatcher: DefaultFileDispatcher,
+        config: CounterfeitRunConfig,
+    ) -> Self {
         Self {
-            dir_picker,
-            file_picker,
+            dir_dispatcher,
+            file_dispatcher,
             config,
-            _request: PhantomData,
         }
     }
 }
 
-impl FileMapperService<DefaultDirPicker, DefaultFilePicker, DefaultRequest> {
+impl FileMapperService {
     pub fn default(config: CounterfeitRunConfig, index_map: MultiFileIndexMap) -> Self {
         Self {
-            dir_picker: DefaultDirPicker::new(config.clone()),
-            file_picker: DefaultFilePicker::new(config.create_missing, index_map),
+            dir_dispatcher: DefaultDirDispatcher::new(config.clone()),
+            file_dispatcher: DefaultFileDispatcher::new(config.create_missing, index_map),
             config,
-            _request: PhantomData,
         }
     }
 }
 
-impl<D, F> Service<Request<Body>> for FileMapperService<D, F, DefaultRequest>
-where
-    D: DirPicker<DefaultRequest>,
-    F: FilePicker<DefaultRequest>,
-{
+impl Service<Request<Body>> for FileMapperService {
     type Response = Response<Body>;
     type Error = anyhow::Error;
     type Future = future::Ready<Result<Self::Response, Self::Error>>;
@@ -70,11 +57,9 @@ where
             println!("Request: {} -> {}", request.method(), request.uri().path());
         }
 
-        let default_request = create_default_request(&request);
-
-        match self.dir_picker.pick_directory(&default_request) {
+        match self.dir_dispatcher.dispatch("", &request) {
             Ok(directory) => {
-                let file = self.file_picker.pick_file(&directory, &default_request);
+                let file = self.file_dispatcher.dispatch(&directory, &request);
                 let output = MapperOutput::new(request, file);
 
                 if !self.config.silent {
@@ -100,7 +85,7 @@ impl MakeFileMapperService {
 }
 
 impl<T> Service<T> for MakeFileMapperService {
-    type Response = FileMapperService<DefaultDirPicker, DefaultFilePicker, DefaultRequest>;
+    type Response = FileMapperService;
     type Error = anyhow::Error;
     type Future = future::Ready<Result<Self::Response, Self::Error>>;
 
@@ -214,11 +199,4 @@ fn set_default_headers(response: &mut Response<Body>) {
         header::ACCESS_CONTROL_ALLOW_HEADERS,
         HeaderValue::from_static("*"),
     );
-}
-
-fn create_default_request(request: &Request<Body>) -> DefaultRequest {
-    DefaultRequest {
-        method: request.method().to_string(),
-        uri_path: request.uri().path().to_string(),
-    }
 }

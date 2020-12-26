@@ -1,16 +1,15 @@
+use hyper::{Body, Method, Request};
 use std::fs;
 use std::io;
 use std::path::{Path, PathBuf};
 
-use crate::Error;
-use crate::{DefaultRequest, FilePicker, MultiFileIndexMap};
-
-pub struct DefaultFilePicker {
+use crate::{Dispatcher, Error, MultiFileIndexMap};
+pub struct DefaultFileDispatcher {
     create_missing: bool,
     multifile_indices: MultiFileIndexMap,
 }
 
-impl DefaultFilePicker {
+impl DefaultFileDispatcher {
     pub fn new(create_missing: bool, index_map: MultiFileIndexMap) -> Self {
         Self {
             create_missing,
@@ -19,18 +18,22 @@ impl DefaultFilePicker {
     }
 }
 
-impl FilePicker<DefaultRequest> for DefaultFilePicker {
-    fn pick_file(&self, directory: &Path, request: &DefaultRequest) -> Result<PathBuf, Error> {
+impl Dispatcher for DefaultFileDispatcher {
+    fn dispatch(
+        &self,
+        directory: impl AsRef<Path>,
+        request: &Request<Body>,
+    ) -> Result<PathBuf, Error> {
         let available_files = fs::read_dir(&directory)?
             .filter_map(Result::ok)
             .map(|entry| entry.path())
             .filter(|p| p.is_file())
-            .filter(|p| file_matches(p, &request.method))
+            .filter(|p| file_matches(p, &request.method()))
             .collect::<Vec<PathBuf>>();
 
         if available_files.is_empty() {
             if self.create_missing {
-                let file_name = format!("{}.json", request.method.to_lowercase());
+                let file_name = format!("{}.json", request.method().to_string().to_lowercase());
 
                 let mut path = PathBuf::new();
                 path.push(directory);
@@ -44,7 +47,9 @@ impl FilePicker<DefaultRequest> for DefaultFilePicker {
             }
         } else {
             let mut indices = self.multifile_indices.lock().unwrap();
-            let index = indices.entry(PathBuf::from(directory)).or_insert_with(|| 0);
+            let index = indices
+                .entry(PathBuf::from(directory.as_ref()))
+                .or_insert_with(|| 0);
             if *index >= available_files.len() {
                 *index = 0;
             }
@@ -60,8 +65,8 @@ impl FilePicker<DefaultRequest> for DefaultFilePicker {
     }
 }
 
-fn file_matches(file_path: &PathBuf, method: &str) -> bool {
-    let method_str = method.to_lowercase();
+fn file_matches(file_path: &PathBuf, method: &Method) -> bool {
+    let method_str = method.to_string().to_lowercase();
 
     match file_path.file_stem().and_then(|stem| stem.to_str()) {
         Some(stem) => {

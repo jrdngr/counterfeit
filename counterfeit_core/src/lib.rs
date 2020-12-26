@@ -1,14 +1,12 @@
 pub mod config;
 pub mod default;
-pub mod dir_picker;
+pub mod dispatcher;
 pub mod error;
-pub mod file_picker;
 
 pub use config::CounterfeitRunConfig;
-pub use default::{DefaultDirPicker, DefaultFilePicker, DefaultRequest};
-pub use dir_picker::DirPicker;
+pub use default::{DefaultDirDispatcher, DefaultFileDispatcher};
+pub use dispatcher::Dispatcher;
 pub use error::Error;
-pub use file_picker::FilePicker;
 
 use std::collections::HashMap;
 use std::path::PathBuf;
