@@ -20,7 +20,9 @@ impl DefaultFilePicker {
     }
 }
 
-impl FilePicker<DefaultRequest> for DefaultFilePicker {
+impl FilePicker for DefaultFilePicker {
+    type Request = DefaultRequest;
+
     fn pick_file(&self, directory: &Path, request: &DefaultRequest) -> Result<PathBuf, Error> {
         let available_files = fs::read_dir(&directory)?
             .filter_map(Result::ok)

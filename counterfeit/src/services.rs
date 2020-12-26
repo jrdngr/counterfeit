@@ -5,7 +5,7 @@ use std::task::{Context, Poll};
 use std::sync::Arc;
 
 use anyhow::Result;
-use counterfeit_core::{DirPicker, FilePicker, StandardDirPicker, StandardFilePicker};
+use counterfeit_core::{DirPicker, FilePicker, DefaultDirPicker, DefaultFilePicker, DefaultRequest};
 use futures::future;
 use hyper::{Body, Request, Response, StatusCode};
 use hyper::service::Service;
@@ -41,20 +41,20 @@ where
     }
 }
 
-impl FileMapperService<StandardDirPicker, StandardFilePicker, Request<Body>> {
-    pub fn standard(config: CounterfeitRunConfig, index_map: MultiFileIndexMap) -> Self {
+impl FileMapperService<DefaultDirPicker, DefaultFilePicker, DefaultRequest> {
+    pub fn default(config: CounterfeitRunConfig, index_map: MultiFileIndexMap) -> Self {
         Self {
-            dir_picker: StandardDirPicker::new(config.clone()),
-            file_picker: StandardFilePicker::new(config.create_missing, index_map),
+            dir_picker: DefaultDirPicker::new(config.clone()),
+            file_picker: DefaultFilePicker::new(config.create_missing, index_map),
             config,
         }
     }
 }
 
-impl<D, F> Service<Request<Body>> for FileMapperService<D, F>
+impl<D, F, R> Service<Request<Body>> for FileMapperService<D, F, R>
 where
-    D: DirPicker,
-    F: FilePicker,
+    D: DirPicker<R>,
+    F: FilePicker<R>,
 {
     type Response = Response<Body>;
     type Error = anyhow::Error;
@@ -100,7 +100,7 @@ impl MakeFileMapperService {
 }
 
 impl<T> Service<T> for MakeFileMapperService {
-    type Response = FileMapperService<StandardDirPicker, StandardFilePicker>;
+    type Response = FileMapperService<DefaultDirPicker, DefaultFilePicker, DefaultRequest>;
     type Error = anyhow::Error;
     type Future = future::Ready<Result<Self::Response, Self::Error>>;
 

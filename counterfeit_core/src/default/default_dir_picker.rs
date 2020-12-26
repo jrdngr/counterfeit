@@ -15,7 +15,9 @@ impl DefaultDirPicker {
     }
 }
 
-impl DirPicker<DefaultRequest> for DefaultDirPicker {
+impl DirPicker for DefaultDirPicker {
+    type Request = DefaultRequest;
+
     fn pick_directory(&self, request: &DefaultRequest) -> Result<PathBuf, Error> {
         let path = PathBuf::from(format!(
             "{}{}",
