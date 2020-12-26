@@ -76,7 +76,7 @@ name = "counterfeit"
 version = "0.2.0"
 dependencies = [
  "anyhow",
- "counterfeit_core",
+ "counterfeit_core 0.2.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "futures",
  "hyper",
  "structopt",
@@ -86,6 +86,16 @@ dependencies = [
 [[package]]
 name = "counterfeit_core"
 version = "0.2.0"
+dependencies = [
+ "structopt",
+ "walkdir",
+]
+
+[[package]]
+name = "counterfeit_core"
+version = "0.2.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "4a1c367144f6476282427107cb2f2306aa4ae94a1d85f71cd6e05574860e082e"
 dependencies = [
  "structopt",
  "walkdir",
