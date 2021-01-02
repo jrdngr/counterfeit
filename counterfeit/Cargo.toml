@@ -2,13 +2,13 @@
 name = "counterfeit"
 description = "Mock your REST API with files"
 license = "MIT"
-version = "0.2.1"
+version = "0.2.2"
 authors = ["picklenerd <jordan.t.grace@gmail.com>"]
 edition = "2018"
 
 [dependencies]
 anyhow = "1.0"
-counterfeit_core = "0.2.0"
+counterfeit_core = "0.2.1"
 futures = "0.3"
 hyper = { version = "0.14.1", features = ["server", "http1", "tcp"] }
 structopt = "0.3"

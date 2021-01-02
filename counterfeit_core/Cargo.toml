@@ -2,7 +2,7 @@
 name = "counterfeit_core"
 description = "Backend code for counterfeit crate"
 license = "MIT"
-version = "0.2.0"
+version = "0.2.1"
 authors = ["Jordan Grace <jordan.t.grace@gmail.com>"]
 edition = "2018"
 
