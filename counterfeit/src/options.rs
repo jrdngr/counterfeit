@@ -1,5 +1,4 @@
 use counterfeit_core::CounterfeitRunConfig;
-use std::net::SocketAddr;
 use structopt::StructOpt;
 
 /// Counterfeit is a tool for simulating a REST API.
@@ -47,13 +46,13 @@ pub struct CounterfeitRunOptions {
     #[structopt(short = "s", long)]
     pub silent: bool,
 
-    /// Sets the port of the local server
-    #[structopt(short = "p", long)]
-    pub port: Option<u16>,
+    /// Sets the host of the local server
+    #[structopt(short = "h", long, default_value = "127.0.0.1")]
+    pub host: String,
 
-    /// Sets the socket address of the local server
-    #[structopt(short = "a", long, default_value = "127.0.0.1:8000")]
-    pub socket: SocketAddr,
+    /// Sets the port of the local server
+    #[structopt(short = "p", long, default_value = "3000")]
+    pub port: u16,
 
     /// Sets the directory prefix for path parameters.
     /// Example: "_" -> ../_anyIdentifier/..
@@ -99,7 +98,7 @@ impl From<CounterfeitRunOptions> for CounterfeitRunConfig {
             write,
             create_missing,
             silent,
-            mut socket,
+            host,
             port,
             param_prefix,
             param_postfix,
@@ -107,9 +106,9 @@ impl From<CounterfeitRunOptions> for CounterfeitRunConfig {
             ..
         } = options;
 
-        if let Some(port) = port {
-            socket.set_port(port);
-        }
+        let socket = format!("{}:{}", host, port)
+            .parse()
+            .expect("Invalid socket address");
 
         let (prefix, postfix) = if let Some(surround) = param_surround {
             (surround.clone(), surround)
