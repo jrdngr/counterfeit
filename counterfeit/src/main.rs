@@ -5,27 +5,29 @@ use std::collections::HashMap;
 use std::sync::{Arc, Mutex};
 
 use anyhow::Result;
-use counterfeit_core::{CounterfeitRunConfig, MultiFileIndexMap};
+use counterfeit_core::MultiFileIndexMap;
 use hyper::Server;
 use services::MakeFileMapperService;
 use structopt::StructOpt;
 
-use crate::options::CounterfeitOptions;
+use crate::options::{CounterfeitOptions, CounterfeitServeOptions};
 
 #[tokio::main]
 async fn main() -> Result<()> {
     match CounterfeitOptions::from_args() {
-        CounterfeitOptions::Run(run_options) => run(run_options.into()).await,
+        CounterfeitOptions::Serve(serve_options) => run(serve_options).await,
         CounterfeitOptions::Save(_save_options) => todo!(),
     }
 }
 
-async fn run(config: CounterfeitRunConfig) -> Result<()> {
+async fn run(options: CounterfeitServeOptions) -> Result<()> {
     let index_map: MultiFileIndexMap = Arc::new(Mutex::new(HashMap::new()));
 
-    let socket = config.socket;
+    let socket = format!("{}:{}", options.host, options.port)
+        .parse()
+        .expect("Invalid socket address");
 
-    let make_service = MakeFileMapperService::new(config, index_map);
+    let make_service = MakeFileMapperService::new(options.into(), index_map);
 
     let server = Server::bind(&socket).serve(make_service);
     println!("Serving files at: {}", &socket);

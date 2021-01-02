@@ -3,14 +3,14 @@ use std::path::{Component, Path, PathBuf};
 use walkdir::WalkDir;
 
 use crate::Error;
-use crate::{config::CounterfeitRunConfig, Dispatcher};
+use crate::{config::CounterfeitConfig, Dispatcher};
 
 pub struct DefaultDirDispatcher {
-    config: CounterfeitRunConfig,
+    config: CounterfeitConfig,
 }
 
 impl DefaultDirDispatcher {
-    pub fn new(config: CounterfeitRunConfig) -> Self {
+    pub fn new(config: CounterfeitConfig) -> Self {
         Self { config }
     }
 }
@@ -60,7 +60,7 @@ impl PathMatch {
     pub fn get_match<T: AsRef<Path>, P: AsRef<Path>>(
         target: &T,
         potential: &P,
-        config: &CounterfeitRunConfig,
+        config: &CounterfeitConfig,
     ) -> Option<Self> {
         let target = target.as_ref();
         let potential = potential.as_ref();
@@ -94,7 +94,7 @@ impl PathMatch {
     }
 }
 
-fn is_param(component: &Component, config: &CounterfeitRunConfig) -> bool {
+fn is_param(component: &Component, config: &CounterfeitConfig) -> bool {
     match component.as_os_str().to_str() {
         Some(s) => s.starts_with(&config.prefix) && s.ends_with(&config.postfix),
         None => false,

@@ -1,4 +1,4 @@
-use counterfeit_core::CounterfeitRunConfig;
+use counterfeit_core::CounterfeitConfig;
 use structopt::StructOpt;
 
 /// Counterfeit is a tool for simulating a REST API.
@@ -8,9 +8,9 @@ use structopt::StructOpt;
 #[derive(StructOpt, Debug)]
 #[structopt(name = "options")]
 pub enum CounterfeitOptions {
-    /// Runs the counterfeit server
-    #[structopt(name = "run")]
-    Run(CounterfeitRunOptions),
+    /// Serves the counterfeit server
+    #[structopt(name = "serve")]
+    Serve(CounterfeitServeOptions),
 
     /// Unimplemented --
     /// Pipe in an HTTP response to save the body to the path given in the original request
@@ -22,7 +22,7 @@ pub enum CounterfeitOptions {
 }
 
 #[derive(StructOpt, Debug)]
-pub struct CounterfeitRunOptions {
+pub struct CounterfeitServeOptions {
     /// Sets the base directory to serve responses from
     #[structopt(short = "b", long, default_value = "./responses")]
     pub base_path: String,
@@ -91,24 +91,18 @@ pub struct CounterfeitSaveOptions {
     pub overwrite: bool,
 }
 
-impl From<CounterfeitRunOptions> for CounterfeitRunConfig {
-    fn from(options: CounterfeitRunOptions) -> Self {
-        let CounterfeitRunOptions {
+impl From<CounterfeitServeOptions> for CounterfeitConfig {
+    fn from(options: CounterfeitServeOptions) -> Self {
+        let CounterfeitServeOptions {
             base_path,
             write,
             create_missing,
             silent,
-            host,
-            port,
             param_prefix,
             param_postfix,
             param_surround,
             ..
         } = options;
-
-        let socket = format!("{}:{}", host, port)
-            .parse()
-            .expect("Invalid socket address");
 
         let (prefix, postfix) = if let Some(surround) = param_surround {
             (surround.clone(), surround)
@@ -121,7 +115,6 @@ impl From<CounterfeitRunOptions> for CounterfeitRunConfig {
             write,
             create_missing,
             silent,
-            socket,
             prefix,
             postfix,
         }

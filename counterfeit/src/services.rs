@@ -5,25 +5,26 @@ use std::sync::Arc;
 use std::task::{Context, Poll};
 
 use anyhow::Result;
-use counterfeit_core::{DefaultDirDispatcher, DefaultFileDispatcher, Dispatcher, Error};
+use counterfeit_core::{
+    CounterfeitConfig, DefaultDirDispatcher, DefaultFileDispatcher, Dispatcher, Error,
+    MultiFileIndexMap,
+};
 use futures::future;
 use hyper::header::{self, HeaderValue};
 use hyper::service::Service;
 use hyper::{Body, Request, Response, StatusCode};
 
-use crate::{CounterfeitRunConfig, MultiFileIndexMap};
-
 pub struct FileMapperService {
     dir_dispatcher: DefaultDirDispatcher,
     file_dispatcher: DefaultFileDispatcher,
-    config: CounterfeitRunConfig,
+    config: CounterfeitConfig,
 }
 
 impl FileMapperService {
     pub fn new(
         dir_dispatcher: DefaultDirDispatcher,
         file_dispatcher: DefaultFileDispatcher,
-        config: CounterfeitRunConfig,
+        config: CounterfeitConfig,
     ) -> Self {
         Self {
             dir_dispatcher,
@@ -34,7 +35,7 @@ impl FileMapperService {
 }
 
 impl FileMapperService {
-    pub fn default(config: CounterfeitRunConfig, index_map: MultiFileIndexMap) -> Self {
+    pub fn default(config: CounterfeitConfig, index_map: MultiFileIndexMap) -> Self {
         Self {
             dir_dispatcher: DefaultDirDispatcher::new(config.clone()),
             file_dispatcher: DefaultFileDispatcher::new(config.create_missing, index_map),
@@ -74,12 +75,12 @@ impl Service<Request<Body>> for FileMapperService {
 }
 
 pub struct MakeFileMapperService {
-    config: CounterfeitRunConfig,
+    config: CounterfeitConfig,
     index_map: MultiFileIndexMap,
 }
 
 impl MakeFileMapperService {
-    pub fn new(config: CounterfeitRunConfig, index_map: MultiFileIndexMap) -> Self {
+    pub fn new(config: CounterfeitConfig, index_map: MultiFileIndexMap) -> Self {
         Self { config, index_map }
     }
 }

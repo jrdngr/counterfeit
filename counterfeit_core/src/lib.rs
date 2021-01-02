@@ -3,7 +3,7 @@ pub mod default;
 pub mod dispatcher;
 pub mod error;
 
-pub use config::CounterfeitRunConfig;
+pub use config::CounterfeitConfig;
 pub use default::{DefaultDirDispatcher, DefaultFileDispatcher};
 pub use dispatcher::Dispatcher;
 pub use error::Error;
