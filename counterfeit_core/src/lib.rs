@@ -1,12 +1,12 @@
 pub mod config;
-pub mod default;
 pub mod dispatcher;
 pub mod error;
+pub mod rest;
 
 pub use config::CounterfeitConfig;
-pub use default::{DefaultDirDispatcher, DefaultFileDispatcher};
 pub use dispatcher::Dispatcher;
 pub use error::Error;
+pub use rest::{RestDirDispatcher, RestFileDispatcher};
 
 use std::collections::HashMap;
 use std::path::PathBuf;

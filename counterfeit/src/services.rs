@@ -6,8 +6,7 @@ use std::task::{Context, Poll};
 
 use anyhow::Result;
 use counterfeit_core::{
-    CounterfeitConfig, DefaultDirDispatcher, DefaultFileDispatcher, Dispatcher, Error,
-    MultiFileIndexMap,
+    CounterfeitConfig, Dispatcher, Error, MultiFileIndexMap, RestDirDispatcher, RestFileDispatcher,
 };
 use futures::future;
 use hyper::header::{self, HeaderValue};
@@ -15,15 +14,15 @@ use hyper::service::Service;
 use hyper::{Body, Request, Response, StatusCode};
 
 pub struct FileMapperService {
-    dir_dispatcher: DefaultDirDispatcher,
-    file_dispatcher: DefaultFileDispatcher,
+    dir_dispatcher: RestDirDispatcher,
+    file_dispatcher: RestFileDispatcher,
     config: CounterfeitConfig,
 }
 
 impl FileMapperService {
     pub fn new(
-        dir_dispatcher: DefaultDirDispatcher,
-        file_dispatcher: DefaultFileDispatcher,
+        dir_dispatcher: RestDirDispatcher,
+        file_dispatcher: RestFileDispatcher,
         config: CounterfeitConfig,
     ) -> Self {
         Self {
@@ -37,8 +36,8 @@ impl FileMapperService {
 impl FileMapperService {
     pub fn default(config: CounterfeitConfig, index_map: MultiFileIndexMap) -> Self {
         Self {
-            dir_dispatcher: DefaultDirDispatcher::new(config.clone()),
-            file_dispatcher: DefaultFileDispatcher::new(config.create_missing, index_map),
+            dir_dispatcher: RestDirDispatcher::new(config.clone()),
+            file_dispatcher: RestFileDispatcher::new(config.create_missing, index_map),
             config,
         }
     }

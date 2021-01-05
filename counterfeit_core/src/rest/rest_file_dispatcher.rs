@@ -4,12 +4,12 @@ use std::io;
 use std::path::{Path, PathBuf};
 
 use crate::{Dispatcher, Error, MultiFileIndexMap};
-pub struct DefaultFileDispatcher {
+pub struct RestFileDispatcher {
     create_missing: bool,
     multifile_indices: MultiFileIndexMap,
 }
 
-impl DefaultFileDispatcher {
+impl RestFileDispatcher {
     pub fn new(create_missing: bool, index_map: MultiFileIndexMap) -> Self {
         Self {
             create_missing,
@@ -18,7 +18,7 @@ impl DefaultFileDispatcher {
     }
 }
 
-impl Dispatcher for DefaultFileDispatcher {
+impl Dispatcher for RestFileDispatcher {
     fn dispatch(
         &self,
         directory: impl AsRef<Path>,

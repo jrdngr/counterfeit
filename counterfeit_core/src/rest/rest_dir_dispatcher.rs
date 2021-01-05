@@ -5,17 +5,17 @@ use walkdir::WalkDir;
 use crate::Error;
 use crate::{config::CounterfeitConfig, Dispatcher};
 
-pub struct DefaultDirDispatcher {
+pub struct RestDirDispatcher {
     config: CounterfeitConfig,
 }
 
-impl DefaultDirDispatcher {
+impl RestDirDispatcher {
     pub fn new(config: CounterfeitConfig) -> Self {
         Self { config }
     }
 }
 
-impl Dispatcher for DefaultDirDispatcher {
+impl Dispatcher for RestDirDispatcher {
     fn dispatch(
         &self,
         _base_directory: impl AsRef<Path>,
